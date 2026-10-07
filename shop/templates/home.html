@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% block title %}POSTERHUB | Architectural Wall Art & Museum Curation Studio{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Hero */
+  .hero-section { position:relative; padding: 5rem 0 6rem; overflow:hidden; border-bottom:1px solid #E7E5E0; }
+  .hero-section::before {
+    content:'';position:absolute;top:0;left:25%;width:24rem;height:24rem;
+    background:rgba(255,255,255,.7);filter:blur(3rem);pointer-events:none;z-index:0;border-radius:50%;
+  }
+  .hero-section::after {
+    content:'';position:absolute;top:2.5rem;right:25%;width:30rem;height:30rem;
+    background:rgba(245,242,235,.5);filter:blur(3rem);pointer-events:none;z-index:0;border-radius:50%;
+  }
+
+  /* Gallery wall preview */
+  .gallery-wall {
+    background-color:rgba(250,249,246,.75);
+    border:1px solid rgba(231,229,224,.9);
+    box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 8px rgba(0,0,0,.04),0 10px 18px -4px rgba(0,0,0,.06);
+    border-radius:1rem;
+    padding:1.5rem 2.5rem;
+    position:relative; overflow:hidden;
+    transition:background-color .8s,box-shadow .8s,border-color .8s;
+  }
+  .gallery-wall .ambient { position:absolute;inset:0;pointer-events:none;z-index:0;transition:all .7s; }
+  .gallery-wall.warm { background-color:#F8EFE2 !important; border-color:rgba(212,175,55,.32) !important; box-shadow:0 10px 35px -8px rgba(180,110,20,.16),0 25px 50px -12px rgba(120,70,10,.12) !important; }
+  .gallery-wall.studio { background-color:#ECEAE4 !important; border-color:rgba(100,95,88,.35) !important; }
+
+  /* Size pill toggle */
+  .size-pill { padding:.25rem .75rem;border:1px solid #E7E5E0;border-radius:999px;font-size:.7rem;font-family:monospace;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s; }
+  .size-pill.active,.size-pill:hover { border-color:#111;background:#111;color:#fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero-section plaster-light">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-galleryWhite border border-stoneLine shadow-xs mb-4">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-[11px] font-semibold uppercase tracking-widest text-stone-600">New Arrivals Every Week</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-noir tracking-tight leading-[1.08] mb-5">
+        ARCHITECTURAL WALL ART &amp; CURATED PRINTS.
+      </h1>
+      <p class="text-stone-600 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto font-normal">
+        Designed for minimal creative spaces, loft studios, and modern bedrooms. Printed on heavy 300 GSM Fuji archival velvet substrate with damage-free peel mounts included.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a href="#shop" class="px-6 py-3.5 bg-noir text-alabaster text-xs uppercase tracking-widest font-bold rounded-sm shadow-md hover:bg-stone-800 transition-all">Shop All Prints</a>
+        <a href="{% url 'home' %}?sort=lo" class="px-6 py-3.5 bg-galleryWhite text-noir border border-stoneLine text-xs uppercase tracking-widest font-semibold rounded-sm hover:border-noir transition-all">Browse by Price</a>
+      </div>
+    </div>
+
+    <!-- Gallery Wall Preview -->
+    <div class="gallery-wall max-w-5xl mx-auto" id="gallery-wall">
+      <div class="ambient" id="wall-ambient"></div>
+      <!-- Lighting toggle -->
+      <div class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-stoneLine/70">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-champagne animate-pulse"></div>
+          <span class="text-xs font-mono uppercase tracking-widest font-bold text-stone-700">Room Lighting Simulation:</span>
+          <span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-galleryWhite border border-stoneLine text-stone-600 shadow-xs" id="lighting-pill">5500K Clean Daylight</span>
+        </div>
+        <div class="inline-flex items-center p-1 bg-galleryWhite/90 border border-stoneLine/90 rounded-full shadow-sm text-xs gap-1">
+          <button data-mode="daylight" data-label="5500K Clean Daylight" class="lighting-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-noir text-white text-xs">
+            <i class="fa-regular fa-sun"></i> Daylight <span class="text-[9px] opacity-70 pl-1 border-l border-white/20">5500K</span>
+          </button>
+          <button data-mode="warm" data-label="2700K Warm Filament Glow" class="lighting-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-stone-600 hover:text-noir text-xs">
+            <i class="fa-solid fa-lightbulb text-amber-500"></i> Warm Lamp <span class="text-[9px] text-stone-400 pl-1 border-l border-stoneLine">2700K</span>
+          </button>
+          <button data-mode="studio" data-label="Gallery Spotlight (CRI 98)" class="lighting-btn hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-stone-600 hover:text-noir text-xs">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Studio <span class="text-[9px] text-stone-400 pl-1 border-l border-stoneLine">CRI 98</span>
+          </button>
+        </div>
+      </div>
+      <!-- Poster grid in wall -->
+      <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 items-end">
+        {% for p in posters|slice:":4" %}
+        <a href="{% url 'detail' p.pk %}" class="poster-card bg-galleryWhite print-border gallery-shadow-elevated {% cycle 'col-span-2 transform -rotate-1 hover:rotate-0 hover:-translate-y-2' 'transform rotate-1 hover:rotate-0 hover:-translate-y-2' 'transform -rotate-2 hover:rotate-0 hover:-translate-y-2' 'col-span-2 transform rotate-2 hover:rotate-0 hover:-translate-y-2' %} transition-all duration-300 block">
+          {% if forloop.counter == 1 or forloop.counter == 4 %}<div class="washi-tape-top"></div>{% else %}<div class="washi-tape-corner-{% if forloop.counter == 2 %}left{% else %}right{% endif %}"></div>{% endif %}
+          <div class="aspect-[3/4] overflow-hidden relative group bg-stone-100">
+            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"/>
+            {% else %}<div class="w-full h-full flex items-end p-3" style="background:linear-gradient(135deg,#e5e5e5,#d4d4d4)">
+              <div><p class="text-xs font-bold text-stone-700 leading-tight">{{ p.title }}</p><p class="text-[10px] text-stone-500">{{ p.category }}</p></div>
+            </div>{% endif %}
+            <div class="absolute bottom-2 left-2 bg-noir/80 backdrop-blur-xs text-white text-[9px] uppercase tracking-widest px-2 py-0.5 font-mono">{{ p.category }} • ₹{{ p.base_price }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      <!-- Wall footer -->
+      <div class="relative z-10 mt-6 pt-4 border-t border-stoneLine/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-3 text-stone-600">
+          <div class="w-7 h-7 rounded-full bg-champagne/15 text-champagneMuted flex items-center justify-center"><i class="fa-solid fa-tape text-xs"></i></div>
+          <span><strong>16x Damage-Free Nano-Adhesive Tabs</strong> included with every order.</span>
+        </div>
+        <div class="hidden sm:flex items-center gap-4 text-stone-500 font-mono text-[11px]">
+          <span>ZERO NAIL HOLES</span><span>300 GSM VELVET MATTE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Craftsmanship Bar -->
+<section class="bg-galleryWhite py-12 border-b border-stoneLine">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      {% for icon,title,text in craftsmanship %}
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-sm bg-plaster border border-stoneLine flex items-center justify-center shrink-0 text-noir"><i class="{{ icon }} text-lg"></i></div>
+        <div><h4 class="font-display font-bold text-sm uppercase tracking-wide text-noir">{{ title }}</h4><p class="text-xs text-stone-500 mt-1 leading-relaxed">{{ text }}</p></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Single Prints Shop -->
+<section class="py-20 bg-galleryWhite border-b border-stoneLine" id="shop">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-10 pb-4 border-b border-stoneLine">
+      <div>
+        <span class="text-xs font-bold uppercase tracking-widest text-stone-400 font-mono">INDIVIDUAL ARCHIVAL EDITIONS</span>
+        <h2 class="text-3xl font-extrabold text-noir mt-1">CHOOSE YOUR EXACT SIZES</h2>
+        <p class="text-stone-500 text-xs sm:text-sm mt-1">Select from A4 gallery prints up to expansive A2 statement art.</p>
+      </div>
+      <!-- Category filter -->
+      <form method="get" id="filter-form" class="mt-4 sm:mt-0 flex flex-wrap gap-2 items-center">
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        <a href="{% url 'home' %}" class="size-pill {% if not cat %}active{% endif %}">All</a>
+        {% for c in cats %}
+        <a href="{% url 'home' %}?cat={{ c.slug }}{% if sort %}&sort={{ sort }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="size-pill {% if c.slug == cat %}active{% endif %}">{{ c.name }}</a>
+        {% endfor %}
+      </form>
+    </div>
+
+    <!-- Search/sort bar -->
+    <form method="get" id="search-form" class="flex gap-3 mb-10 items-center bg-plaster/80 border border-stoneLine rounded-full px-4 py-2">
+      {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+      <i class="fa-solid fa-magnifying-glass text-stone-400 text-xs"></i>
+      <input name="q" value="{{ q|default:'' }}" class="flex-1 bg-transparent border-none text-xs text-noir placeholder-stone-400 focus:outline-none" placeholder="Search posters, artists, themes…"/>
+      <div class="w-px h-5 bg-stoneLine"></div>
+      <select name="sort" onchange="document.getElementById('search-form').submit()" class="bg-transparent border-none text-xs text-stone-600 focus:outline-none cursor-pointer">
+        <option value="">Newest</option>
+        <option value="lo" {% if sort == 'lo' %}selected{% endif %}>Price ↑</option>
+        <option value="hi" {% if sort == 'hi' %}selected{% endif %}>Price ↓</option>
+      </select>
+      <button type="submit" class="px-3.5 py-1.5 bg-noir text-white text-[11px] font-bold uppercase tracking-wider rounded-full hover:bg-stone-800 transition-colors">Search</button>
+    </form>
+
+    <!-- Grid -->
+    {% if posters %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
+      {% for p in posters %}
+      <div class="lift-on-scroll flex flex-col group">
+        <a href="{% url 'detail' p.pk %}" class="poster-card relative bg-galleryWhite p-2 print-border gallery-shadow-flat hover:gallery-shadow-elevated transition-all rounded-sm mb-3 block">
+          <div class="washi-tape-top"></div>
+          <div class="aspect-[3/4] overflow-hidden bg-stone-100">
+            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+            {% else %}<div class="w-full h-full flex items-end p-3" style="background:linear-gradient(135deg,#e5e5e5,#ccc)">
+              <div><p class="text-sm font-bold text-stone-700 leading-tight">{{ p.title }}</p><p class="text-xs text-stone-500">{{ p.category }}</p></div>
+            </div>{% endif %}
+          </div>
+          {% if forloop.counter <= 2 %}<span class="absolute top-4 right-4 bg-noir/80 text-white text-[9px] font-mono px-2 py-0.5 rounded">BESTSELLER</span>{% endif %}
+        </a>
+        <div class="flex items-start justify-between mb-1">
+          <h4 class="font-display font-bold text-sm text-noir leading-tight">{{ p.title }}</h4>
+          <span class="font-display font-semibold text-sm text-noir whitespace-nowrap ml-2">₹{{ p.base_price }}</span>
+        </div>
+        <p class="text-[11px] text-stone-500 mb-3">{{ p.category }}{% if p.avg %} · <span class="text-champagne font-semibold">{{ p.avg|floatformat:1 }}★</span>{% endif %}</p>
+        <!-- Size selector pills -->
+        <div class="grid grid-cols-4 gap-1.5 mt-auto">
+          <button class="size-pill active">A4</button>
+          <button class="size-pill">A3</button>
+          <button class="size-pill">A2</button>
+          <a href="{% url 'detail' p.pk %}" class="size-pill text-center">→</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-24">
+      <div class="text-5xl mb-4">🖼️</div>
+      <h3 class="font-display font-bold text-xl text-noir mb-1">No prints found</h3>
+      <p class="text-stone-500 text-sm">Try a different search or category.</p>
+      <a href="{% url 'home' %}" class="mt-4 inline-block px-5 py-2 bg-noir text-white text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors">View All Prints</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Stats / Social proof -->
+<section class="py-16 bg-alabaster border-b border-stoneLine">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-10">
+      <div class="flex items-center justify-center gap-1 text-champagne mb-2 text-sm">
+        {% for i in "12345" %}<i class="fa-solid fa-star"></i>{% endfor %}
+      </div>
+      <h2 class="text-3xl font-extrabold text-noir">43,000+ INDIAN WALLS TRANSFORMED</h2>
+      <p class="text-stone-500 text-xs sm:text-sm mt-1">Real feedback from architects, engineers, and creative studios across India.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {% for author,role,review in testimonials %}
+      <div class="lift-on-scroll bg-plaster/50 border border-stoneLine p-6 rounded-lg gallery-shadow-flat flex flex-col justify-between">
+        <p class="text-xs sm:text-sm text-charcoal leading-relaxed italic">"{{ review }}"</p>
+        <div class="mt-6 pt-4 border-t border-stoneLine flex items-center justify-between">
+          <div><p class="font-display font-bold text-xs text-noir">{{ author }}</p><span class="text-[10px] text-stone-400">{{ role }}</span></div>
+          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Verified Buyer</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Lighting switcher
+  const wall = document.getElementById('gallery-wall');
+  const pill = document.getElementById('lighting-pill');
+  document.querySelectorAll('.lighting-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.lighting-btn').forEach(b=>{
+        b.classList.remove('bg-noir','text-white');b.classList.add('text-stone-600');
+      });
+      btn.classList.add('bg-noir','text-white');btn.classList.remove('text-stone-600');
+      wall.className='gallery-wall '+btn.dataset.mode;
+      if(pill)pill.textContent=btn.dataset.label;
+    });
+  });
+  // Size pill toggle (UI only)
+  document.querySelectorAll('.size-pill').forEach(p=>{
+    p.addEventListener('click',function(){
+      if(this.tagName==='BUTTON'){
+        const siblings=this.parentElement.querySelectorAll('button.size-pill');
+        siblings.forEach(s=>s.classList.remove('active'));
+        this.classList.add('active');
+      }
+    });
+  });
+</script>
+{% endblock %}

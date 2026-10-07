@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}POSTERHUB | Architectural Wall Art & Museum Curation Studio{% endblock %}</title>
+  <meta name="description" content="{% block meta_desc %}India's foremost architectural print studio. Curated wall art, archival posters in A4, A3, A2 on 300 GSM velvet matte paper.{% endblock %}"/>
+
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            alabaster: '#FAF9F6',
+            plaster: '#F4F2EE',
+            galleryWhite: '#FFFFFF',
+            noir: '#111111',
+            obsidian: '#1A1A1A',
+            charcoal: '#2D2D2D',
+            champagne: '#D4AF37',
+            champagneMuted: '#C5A880',
+            stoneLine: '#E7E5E0',
+            creamMuted: '#EFECE6'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Syne"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family:'Plus Jakarta Sans',sans-serif; background-color:#FAF9F6; color:#111111; overflow-x:hidden; }
+    h1,h2,h3,h4,.font-display { font-family:'Syne',sans-serif; letter-spacing:-0.02em; }
+
+    /* Gallery surfaces */
+    .limewash-wall {
+      background-color:#FAF9F6;
+      background-image:
+        radial-gradient(at 0% 0%,rgba(240,237,230,.7) 0px,transparent 50%),
+        radial-gradient(at 100% 0%,rgba(245,242,235,.8) 0px,transparent 40%),
+        radial-gradient(at 50% 100%,rgba(235,230,220,.4) 0px,transparent 60%);
+    }
+    .plaster-light { background:radial-gradient(circle at 50% 20%,rgba(255,255,255,.9) 0%,rgba(249,248,245,.5) 100%); }
+
+    /* Shadows */
+    .gallery-shadow-flat {
+      box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 8px rgba(0,0,0,.04),0 10px 18px -4px rgba(0,0,0,.06);
+    }
+    .gallery-shadow-elevated {
+      box-shadow:0 2px 4px rgba(17,17,17,.03),0 12px 24px -6px rgba(17,17,17,.08),0 25px 40px -10px rgba(17,17,17,.12),0 0 0 1px rgba(0,0,0,.03);
+    }
+
+    /* Washi tapes */
+    .washi-tape-top {
+      position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+      width:58px;height:22px;background-color:rgba(245,243,235,.75);
+      backdrop-filter:blur(2px);box-shadow:0 1px 3px rgba(0,0,0,.08);
+      border-left:1px dashed rgba(200,195,185,.6);border-right:1px dashed rgba(200,195,185,.6);
+      z-index:20;pointer-events:none;transition:background-color .6s ease;
+    }
+    .washi-tape-corner-left {
+      position:absolute;top:-8px;left:-12px;width:44px;height:18px;
+      background-color:rgba(240,236,226,.78);backdrop-filter:blur(1.5px);
+      transform:rotate(-35deg);box-shadow:0 1px 2px rgba(0,0,0,.06);z-index:20;pointer-events:none;
+    }
+    .washi-tape-corner-right {
+      position:absolute;top:-8px;right:-12px;width:44px;height:18px;
+      background-color:rgba(240,236,226,.78);backdrop-filter:blur(1.5px);
+      transform:rotate(35deg);box-shadow:0 1px 2px rgba(0,0,0,.06);z-index:20;pointer-events:none;
+    }
+
+    /* Print borders */
+    .print-border { border:6px solid #FFFFFF;outline:1px solid rgba(0,0,0,.07);transition:border-color .6s ease,box-shadow .6s ease; }
+    .print-border-thick { border:12px solid #FFFFFF;outline:1px solid rgba(0,0,0,.06); }
+
+    /* Poster card with sheen */
+    .poster-card {
+      position:relative;overflow:hidden;transform-style:preserve-3d;perspective:1000px;
+      transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s cubic-bezier(.16,1,.3,1),filter .6s ease;
+    }
+    .poster-card::before {
+      content:'';position:absolute;top:0;left:-150%;width:80%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.28) 45%,rgba(255,255,255,.5) 50%,transparent 100%);
+      transform:skewX(-24deg);z-index:15;pointer-events:none;transition:left .75s ease-in-out;
+    }
+    .poster-card:hover::before { left:200%; }
+
+    /* Scroll reveal */
+    .lift-on-scroll {
+      opacity:0;transform:translateY(28px) scale(.985);
+      transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1);
+    }
+    .lift-on-scroll.in-view { opacity:1;transform:translateY(0) scale(1); }
+
+    /* Marquee */
+    @keyframes marqueeScroll { 0%{transform:translateX(0%)} 100%{transform:translateX(-50%)} }
+    .animate-marquee { display:flex;width:max-content;animation:marqueeScroll 34s linear infinite; }
+    .animate-marquee:hover { animation-play-state:paused; }
+
+    /* Toast */
+    .ph-toast {
+      position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;
+      display:flex;flex-direction:column;gap:.5rem;pointer-events:none;
+    }
+    .ph-toast-item {
+      padding:.7rem 1.1rem;border-radius:.5rem;font-size:.85rem;font-weight:500;
+      background:#111;color:#FAF9F6;border:1px solid #2D2D2D;
+      box-shadow:0 8px 24px rgba(0,0,0,.35);pointer-events:all;cursor:pointer;
+      animation:toastIn .25s ease forwards;
+    }
+    .ph-toast-item.err { background:#7f1d1d;border-color:#991b1b;color:#fef2f2; }
+    @keyframes toastIn{from{opacity:0;transform:translateX(1.5rem)}to{opacity:1;transform:translateX(0)}}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="limewash-wall antialiased selection:bg-noir selection:text-white">
+
+<!-- Announcement Marquee -->
+<section class="bg-noir text-alabaster py-2.5 px-4 text-[11px] font-medium tracking-wider uppercase overflow-hidden border-b border-charcoal/30 select-none relative z-50">
+  <div class="animate-marquee items-center gap-10">
+    <div class="flex items-center gap-10">
+      <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-champagne"></i> Buy 4 Get 3 Free Applied Automatically</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-feather text-stone-300"></i> 300 GSM Archival Velvet Matte Paper</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-tape text-champagne"></i> Damage-Free Removable Nano-Adhesive Tabs Included</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-stone-300"></i> Crush-Proof Architectural Tube Dispatch</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-star text-champagne text-[10px]"></i> Rated 4.9/5 Across 43,000+ Indian Creative Studios</span>
+      <span class="text-stone-500 font-light">•</span>
+    </div>
+    <div aria-hidden="true" class="flex items-center gap-10">
+      <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-champagne"></i> Buy 4 Get 3 Free Applied Automatically</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-feather text-stone-300"></i> 300 GSM Archival Velvet Matte Paper</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-tape text-champagne"></i> Damage-Free Removable Nano-Adhesive Tabs Included</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-stone-300"></i> Crush-Proof Architectural Tube Dispatch</span>
+      <span class="text-stone-500 font-light">•</span>
+      <span class="flex items-center gap-2"><i class="fa-solid fa-star text-champagne text-[10px]"></i> Rated 4.9/5 Across 43,000+ Indian Creative Studios</span>
+      <span class="text-stone-500 font-light">•</span>
+    </div>
+  </div>
+</section>
+
+<!-- Header -->
+<header class="sticky top-0 z-40 bg-galleryWhite/90 backdrop-blur-md border-b border-stoneLine transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-20">
+      <!-- Logo -->
+      <div class="flex items-center gap-8">
+        <a href="{% url 'home' %}" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 bg-noir text-alabaster flex items-center justify-center font-display font-bold text-xl rounded-sm tracking-tighter group-hover:bg-champagne transition-colors">P</div>
+          <div class="flex flex-col">
+            <span class="font-display font-extrabold text-xl tracking-tight text-noir leading-none">POSTERHUB</span>
+            <span class="text-[9px] font-semibold uppercase tracking-[0.25em] text-stone-400 mt-1">Gallery &amp; Printworks</span>
+          </div>
+        </a>
+        <!-- Nav links -->
+        <nav class="hidden lg:flex items-center gap-7 text-[13px] font-medium text-charcoal/90">
+          <a href="{% url 'home' %}" class="hover:text-noir hover:underline underline-offset-8 transition-all">All Prints</a>
+          <a href="{% url 'wishlist' %}" class="hover:text-noir hover:underline underline-offset-8 transition-all">Wishlist</a>
+          <a href="{% url 'orders' %}" class="hover:text-noir hover:underline underline-offset-8 transition-all">Orders</a>
+          {% if user.is_staff %}<a href="/admin/" class="hover:text-noir hover:underline underline-offset-8 transition-all">Admin</a>{% endif %}
+        </nav>
+      </div>
+      <!-- Search -->
+      <form method="get" action="{% url 'home' %}" class="hidden md:flex items-center flex-1 max-w-sm mx-8">
+        <div class="relative w-full">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
+          <input name="q" value="{{ q|default:'' }}" class="w-full pl-9 pr-4 py-2 bg-plaster/80 border border-stoneLine rounded-full text-xs text-noir placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-noir focus:bg-galleryWhite transition-all" placeholder="Search posters, artists, themes…"/>
+        </div>
+      </form>
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        {% if user.is_authenticated %}
+          <span class="hidden sm:block text-xs text-stone-500 font-medium">Hi, {{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}
+            <button class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-noir bg-plaster hover:bg-stoneLine/80 border border-stoneLine rounded-full transition-all">
+              <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Sign out
+            </button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-noir bg-plaster hover:bg-stoneLine/80 border border-stoneLine rounded-full transition-all">Sign In</a>
+          <a href="{% url 'register' %}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-alabaster bg-noir hover:bg-obsidian rounded-full transition-all">Register</a>
+        {% endif %}
+        <a href="{% url 'cart' %}" class="relative flex items-center gap-2.5 px-4 py-2 bg-noir text-alabaster text-xs font-medium rounded-full hover:bg-obsidian shadow-sm transition-all group">
+          <i class="fa-solid fa-bag-shopping text-xs group-hover:scale-110 transition-transform"></i>
+          <span class="font-semibold">Vault</span>
+          {% if cart_count %}<span class="ml-1 w-5 h-5 rounded-full bg-champagne text-noir text-[10px] font-bold flex items-center justify-center">{{ cart_count }}</span>{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Page content -->
+{% block content %}{% endblock %}
+
+<!-- Footer -->
+<footer class="bg-noir text-stone-400 pt-16 pb-12 border-t border-charcoal/40 text-xs">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-14 border-b border-charcoal/60">
+      <div class="lg:col-span-2">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 bg-galleryWhite text-noir flex items-center justify-center font-display font-bold text-lg rounded-sm">P</div>
+          <span class="font-display font-extrabold text-lg tracking-tight text-white">POSTERHUB</span>
+        </div>
+        <p class="text-stone-400 text-xs leading-relaxed max-w-sm">India's foremost architectural print and wall aesthetic collective. Curating heavy-substrate gallery art for creative studios, bedrooms, and living spaces.</p>
+        <div class="mt-6 flex items-center gap-4 text-stone-300">
+          <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-instagram text-base"></i></a>
+          <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-twitter text-base"></i></a>
+          <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-pinterest text-base"></i></a>
+        </div>
+      </div>
+      <div>
+        <h4 class="font-display font-bold text-white uppercase tracking-wider text-xs mb-4">Curations</h4>
+        <ul class="space-y-2.5">
+          <li><a href="{% url 'home' %}?cat=movies" class="hover:text-white transition-colors">Movies &amp; Cinema</a></li>
+          <li><a href="{% url 'home' %}?cat=anime" class="hover:text-white transition-colors">Anime &amp; Mecha</a></li>
+          <li><a href="{% url 'home' %}?cat=music" class="hover:text-white transition-colors">Music</a></li>
+          <li><a href="{% url 'home' %}?cat=nature" class="hover:text-white transition-colors">Nature &amp; Landscape</a></li>
+          <li><a href="{% url 'home' %}?cat=abstract" class="hover:text-white transition-colors">Abstract &amp; Art</a></li>
+          <li><a href="{% url 'home' %}?cat=motivational" class="hover:text-white transition-colors">Motivational</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display font-bold text-white uppercase tracking-wider text-xs mb-4">Account</h4>
+        <ul class="space-y-2.5">
+          <li><a href="{% url 'cart' %}" class="hover:text-white transition-colors">Cart / Vault</a></li>
+          <li><a href="{% url 'wishlist' %}" class="hover:text-white transition-colors">Wishlist</a></li>
+          <li><a href="{% url 'orders' %}" class="hover:text-white transition-colors">My Orders</a></li>
+          {% if user.is_authenticated %}
+          <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="hover:text-white transition-colors">Sign Out</button></form></li>
+          {% else %}
+          <li><a href="{% url 'login' %}" class="hover:text-white transition-colors">Sign In</a></li>
+          <li><a href="{% url 'register' %}" class="hover:text-white transition-colors">Register</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-display font-bold text-white uppercase tracking-wider text-xs mb-4">The Printworks Club</h4>
+        <p class="text-[11px] text-stone-400 mb-3">Join 60,000+ members receiving weekly drop links and 15% off first order.</p>
+        <div class="space-y-2">
+          <input class="w-full px-3 py-2 bg-obsidian border border-charcoal rounded text-xs text-white placeholder-stone-500 focus:outline-none focus:border-champagne" placeholder="Enter your email address" type="email"/>
+          <button class="w-full py-2 bg-champagne text-noir font-bold text-[11px] uppercase tracking-wider rounded hover:bg-champagneMuted transition-colors">Request Exclusive Invite</button>
+        </div>
+      </div>
+    </div>
+    <div class="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-stone-500">
+      <span>© 2026 POSTERHUB India Inc. All artwork is archival fan curation. Handcrafted in India.</span>
+      <div class="flex items-center gap-4 text-stone-400">
+        <span>UPI / QR</span><span>•</span><span>NetBanking</span><span>•</span><span>Visa / Mastercard</span><span>•</span><span class="text-champagne font-semibold">Cash On Delivery</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Django messages as toasts -->
+{% if messages %}
+<div class="ph-toast" id="ph-toast-stack">
+  {% for m in messages %}
+  <div class="ph-toast-item {% if 'error' in m.tags %}err{% endif %}" onclick="this.remove()">
+    {% if 'error' in m.tags %}<i class="fa-solid fa-circle-exclamation mr-2"></i>{% else %}<i class="fa-solid fa-circle-check mr-2 text-champagne"></i>{% endif %}
+    {{ m }}
+  </div>
+  {% endfor %}
+</div>
+<script>
+  setTimeout(()=>{
+    document.querySelectorAll('.ph-toast-item').forEach((t,i)=>{
+      setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),400);},i*200+3500);
+    });
+  },100);
+</script>
+{% endif %}
+
+<!-- Scroll reveal -->
+<script>
+  document.addEventListener('DOMContentLoaded',()=>{
+    const obs=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in-view');});
+    },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+    document.querySelectorAll('.lift-on-scroll').forEach(el=>obs.observe(el));
+
+    // 3D tilt on poster cards
+    document.querySelectorAll('.poster-card').forEach(card=>{
+      card.addEventListener('mousemove',e=>{
+        const r=card.getBoundingClientRect();
+        const x=e.clientX-r.left,y=e.clientY-r.top;
+        const rx=((y-r.height/2)/r.height)*-5.5,ry=((x-r.width/2)/r.width)*5.5;
+        card.style.transform=`perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+      });
+      card.addEventListener('mouseleave',()=>{card.style.transform='';});
+    });
+  });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

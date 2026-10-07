@@ -1,0 +1,18 @@
+<div class="poster-grid">
+{% for p in posters %}
+<a href="{% url 'detail' p.pk %}" class="poster-card" style="color:inherit">
+  {% include '_art.html' %}
+  <div class="poster-card-body">
+    <div class="poster-card-title">{{ p.title }}</div>
+    <div class="poster-card-meta">{{ p.category }}{% if p.avg %} · <span style="color:var(--gold)">{{ p.avg|floatformat:1 }}★</span>{% endif %}</div>
+    <div class="poster-card-price">from ₹{{ p.base_price }}</div>
+  </div>
+</a>
+{% empty %}
+<div class="empty" style="grid-column:1/-1">
+  <div class="empty-icon">🖼️</div>
+  <div class="empty-title">No posters found</div>
+  <p>Try a different search or category.</p>
+</div>
+{% endfor %}
+</div>

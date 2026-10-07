@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environment
+venv/
+.venv/
+
+# Local database (recreate with migrate + seed)
+db.sqlite3
+db.sqlite3-journal
+
+# Uploaded media (recreate with seed; user uploads stay local)
+media/
+
+# Environment / secrets
+.env
+.env.*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Freebuff workspace metadata
+.freebuff/

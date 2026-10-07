@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}{{ p.title }} — POSTERHUB{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <!-- Breadcrumb -->
+  <nav class="flex items-center gap-2 text-xs text-stone-400 mb-8 font-mono uppercase tracking-wider">
+    <a href="{% url 'home' %}" class="hover:text-noir transition-colors">All Prints</a>
+    <span>/</span>
+    <a href="{% url 'home' %}?cat={{ p.category.slug }}" class="hover:text-noir transition-colors">{{ p.category }}</a>
+    <span>/</span>
+    <span class="text-noir">{{ p.title }}</span>
+  </nav>
+
+  <!-- Main product layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 mb-16">
+    <!-- Left: Physical print display -->
+    <div class="flex flex-col items-center">
+      <div class="poster-card relative bg-galleryWhite print-border-thick gallery-shadow-elevated transform hover:-translate-y-1 transition-all duration-500 w-full max-w-md">
+        <div class="washi-tape-top"></div>
+        <div class="aspect-[3/4] overflow-hidden bg-stone-100">
+          {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover"/>
+          {% else %}<div class="w-full h-full flex items-end p-6" style="background:linear-gradient(135deg,#e5e5e5,#bbb)">
+            <div><p class="text-2xl font-display font-bold text-stone-700 leading-tight">{{ p.title }}</p><p class="text-sm text-stone-500 mt-1">{{ p.artist }}</p></div>
+          </div>{% endif %}
+        </div>
+      </div>
+      <p class="mt-4 text-[11px] font-mono text-stone-400 uppercase tracking-widest text-center">300 GSM Archival Velvet Matte • Damage-Free Nano Tabs Included</p>
+    </div>
+
+    <!-- Right: Details -->
+    <div>
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-[11px] font-mono font-semibold uppercase tracking-widest text-champagneMuted">{{ p.category }}</span>
+        {% if avg %}<span class="text-[11px] font-mono text-stone-400">•</span>
+        <span class="text-champagne text-sm">{% for i in "12345" %}{% if forloop.counter <= avg|floatformat:0|add:0 %}★{% else %}☆{% endif %}{% endfor %}</span>
+        <span class="text-[11px] text-stone-500">{{ avg|floatformat:1 }} / 5</span>{% endif %}
+      </div>
+      <h1 class="font-display font-extrabold text-3xl sm:text-4xl text-noir leading-tight mb-2">{{ p.title }}</h1>
+      <p class="text-sm text-stone-500 mb-6">by {{ p.artist }}</p>
+      <hr class="border-stoneLine mb-6"/>
+      <p class="text-sm text-charcoal leading-relaxed mb-8">{{ p.description }}</p>
+
+      <!-- Add to cart form -->
+      <form method="post" action="{% url 'cart_add' %}">
+        {% csrf_token %}
+        <input type="hidden" name="poster" value="{{ p.pk }}"/>
+
+        <!-- Size picker -->
+        <div class="mb-6">
+          <p class="text-[11px] font-mono font-bold uppercase tracking-widest text-stone-600 mb-3">Choose Size</p>
+          <div class="grid grid-cols-3 gap-3">
+            {% for size, price in sizes %}
+            <label class="cursor-pointer">
+              <input type="radio" name="size" value="{{ size }}" {% if forloop.first %}checked{% endif %} class="sr-only peer"/>
+              <div class="border border-stoneLine rounded-sm p-3 text-center transition-all peer-checked:border-noir peer-checked:bg-noir peer-checked:text-white hover:border-stone-400">
+                <p class="font-display font-bold text-sm">{{ size }}</p>
+                <p class="text-[11px] font-mono text-stone-400 peer-checked:text-stone-300 mt-0.5">₹{{ price }}</p>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="flex gap-3 flex-wrap">
+          <button type="submit" class="flex-1 py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all shadow-md">
+            <i class="fa-solid fa-bag-shopping mr-2"></i> Add to Vault
+          </button>
+          {% if user.is_authenticated %}
+          <form method="post" action="{% url 'wish_toggle' p.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-3.5 border {% if wished %}border-champagne bg-champagne/10 text-champagne{% else %}border-stoneLine text-stone-500 hover:border-noir{% endif %} rounded-sm transition-all">
+              <i class="fa-{% if wished %}solid{% else %}regular{% endif %} fa-heart"></i>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </form>
+
+      <hr class="border-stoneLine my-8"/>
+      <!-- Specs -->
+      <div class="grid grid-cols-2 gap-4 text-xs">
+        {% for label,val in specs %}
+        <div class="bg-plaster rounded-sm p-3 border border-stoneLine">
+          <p class="font-mono font-bold uppercase tracking-wider text-stone-400 text-[10px] mb-1">{{ label }}</p>
+          <p class="font-semibold text-noir">{{ val }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Reviews -->
+  <div class="border-t border-stoneLine pt-12">
+    <h2 class="font-display font-extrabold text-2xl text-noir mb-8">Customer Reviews {% if avg %}<span class="text-base font-normal text-stone-400">({{ avg|floatformat:1 }}/5)</span>{% endif %}</h2>
+
+    {% if can_review %}
+    <div class="bg-plaster border border-stoneLine rounded-lg p-6 mb-8 gallery-shadow-flat max-w-xl">
+      <h3 class="font-display font-bold text-sm text-noir mb-4 uppercase tracking-wide">Write Your Review</h3>
+      <form method="post">{% csrf_token %}
+        <div class="mb-4">
+          <label class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Rating</label>
+          <select name="rating" class="w-full bg-galleryWhite border border-stoneLine rounded px-3 py-2 text-sm focus:outline-none focus:border-noir">
+            {% for i in "54321" %}<option value="{{ i }}">{{ i }} Star{% if i != "1" %}s{% endif %}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Review</label>
+          <textarea name="text" rows="4" class="w-full bg-galleryWhite border border-stoneLine rounded px-3 py-2 text-sm focus:outline-none focus:border-noir resize-none" placeholder="Share your experience with this print…"></textarea>
+        </div>
+        <button type="submit" class="px-5 py-2.5 bg-noir text-white text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors">Submit Review</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if reviews %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {% for r in reviews %}
+      <div class="lift-on-scroll bg-plaster/50 border border-stoneLine rounded-lg p-5 gallery-shadow-flat">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <p class="font-display font-bold text-sm text-noir">{{ r.user.username }}</p>
+            <p class="text-[10px] text-stone-400 font-mono">{{ r.created|date:"M j, Y" }}</p>
+          </div>
+          <div class="text-champagne text-sm">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+        </div>
+        {% if r.text %}<p class="text-xs text-charcoal leading-relaxed italic">"{{ r.text }}"</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-stone-400 text-sm italic">No reviews yet — be the first to leave one after your purchase.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

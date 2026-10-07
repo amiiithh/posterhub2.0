@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}My Orders — PosterHub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+  <!-- Page header -->
+  <div class="mb-10">
+    <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Your Collection History</span>
+    <h1 class="font-display font-extrabold text-3xl text-noir mt-1">MY ORDERS</h1>
+  </div>
+
+  {% if orders %}
+  <div class="space-y-5">
+    {% for o in orders %}
+    <div class="lift-on-scroll bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat overflow-hidden">
+
+      <!-- Order header bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-stoneLine bg-plaster/50">
+        <div>
+          <span class="font-display font-extrabold text-base text-noir">Order #{{ o.pk }}</span>
+          <p class="text-[11px] text-stone-400 font-mono mt-0.5">{{ o.created|date:"d M Y, H:i" }} &nbsp;·&nbsp; {{ o.payment }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- Status badge -->
+          <span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
+            {% if o.status == 'Processing' %}bg-amber-50 text-amber-700 border border-amber-200
+            {% elif o.status == 'Shipped' %}bg-blue-50 text-blue-700 border border-blue-200
+            {% elif o.status == 'Delivered' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+            {% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+            {% if o.status == 'Processing' %}<i class="fa-solid fa-clock mr-1"></i>
+            {% elif o.status == 'Shipped' %}<i class="fa-solid fa-truck mr-1"></i>
+            {% elif o.status == 'Delivered' %}<i class="fa-solid fa-circle-check mr-1"></i>
+            {% else %}<i class="fa-solid fa-xmark mr-1"></i>{% endif %}
+            {{ o.status }}
+          </span>
+          <span class="font-display font-extrabold text-lg text-noir">₹{{ o.total }}</span>
+        </div>
+      </div>
+
+      <!-- Order items -->
+      <div class="px-6 py-5">
+        <div class="space-y-3">
+          {% for i in o.items.all %}
+          <div class="flex items-center gap-4">
+            <!-- Mini poster thumbnail -->
+            <div class="w-12 h-16 shrink-0 bg-stone-200 rounded overflow-hidden border border-stoneLine">
+              {% if i.poster and i.poster.image %}
+              <img src="{{ i.poster.image.url }}" alt="{{ i.poster.title }}" class="w-full h-full object-cover">
+              {% else %}
+              <div class="w-full h-full flex items-center justify-center">
+                <i class="fa-solid fa-image text-stone-300 text-sm"></i>
+              </div>
+              {% endif %}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-display font-bold text-sm text-noir">{{ i.poster.title|default:"[Deleted poster]" }}</p>
+              <p class="text-[11px] text-stone-500 font-mono mt-0.5">
+                <span class="px-1.5 py-0.5 bg-plaster border border-stoneLine rounded text-[10px] font-bold mr-1">{{ i.size }}</span>
+                × {{ i.qty }}
+              </p>
+            </div>
+            <p class="font-display font-semibold text-sm text-noir whitespace-nowrap">₹{{ i.price }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Cancel button -->
+        {% if o.status == "Processing" %}
+        <div class="mt-5 pt-4 border-t border-stoneLine">
+          <form method="post" action="{% url 'cancel' o.pk %}">
+            {% csrf_token %}
+            <button id="cancel-order-{{ o.pk }}" type="submit"
+              onclick="return confirm('Cancel this order?')"
+              class="px-4 py-2 border border-red-200 text-red-600 text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-red-50 hover:border-red-400 transition-all">
+              <i class="fa-solid fa-xmark mr-1.5"></i>Cancel Order
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="text-center py-32">
+    <div class="w-24 h-24 bg-plaster rounded-sm flex items-center justify-center mx-auto mb-6 border border-stoneLine gallery-shadow-flat">
+      <i class="fa-solid fa-box-open text-3xl text-stone-300"></i>
+    </div>
+    <h2 class="font-display font-extrabold text-2xl text-noir mb-2">No orders yet</h2>
+    <p class="text-stone-500 text-sm mb-6">When you place an order it will appear here.</p>
+    <a href="{% url 'home' %}" class="inline-block px-6 py-3 bg-noir text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">
+      Start Shopping
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

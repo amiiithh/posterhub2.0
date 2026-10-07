@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Your Vault — POSTERHUB{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div class="mb-8">
+    <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Your Selection</span>
+    <h1 class="font-display font-extrabold text-3xl text-noir mt-1">THE VAULT</h1>
+  </div>
+
+  {% if items %}
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+    <!-- Items -->
+    <div class="lg:col-span-2 space-y-4">
+      {% for item in items %}
+      <div class="lift-on-scroll bg-galleryWhite border border-stoneLine rounded-lg p-4 gallery-shadow-flat flex items-center gap-5">
+        <!-- Thumbnail -->
+        <div class="poster-card bg-galleryWhite print-border gallery-shadow-flat shrink-0 w-20 h-28">
+          <div class="washi-tape-top" style="width:32px;height:14px;top:-6px"></div>
+          <div class="w-full h-full overflow-hidden">
+            {% if item.poster.image %}<img src="{{ item.poster.image.url }}" alt="{{ item.poster.title }}" class="w-full h-full object-cover"/>
+            {% else %}<div class="w-full h-full bg-stone-200 flex items-center justify-center text-[10px] text-stone-500 text-center p-1">{{ item.poster.title }}</div>{% endif %}
+          </div>
+        </div>
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <h3 class="font-display font-bold text-sm text-noir truncate">{{ item.poster.title }}</h3>
+          <p class="text-xs text-stone-500 font-mono mt-0.5">{{ item.size }} print • ₹{{ item.price }} each</p>
+          <!-- Qty controls -->
+          <div class="flex items-center gap-2 mt-3">
+            <form method="post" action="{% url 'cart_update' %}">{% csrf_token %}
+              <input type="hidden" name="key" value="{{ item.key }}"><input type="hidden" name="action" value="dec">
+              <button class="w-7 h-7 border border-stoneLine rounded text-stone-600 hover:border-noir hover:text-noir transition-all text-sm font-bold">−</button>
+            </form>
+            <span class="w-8 text-center text-sm font-bold text-noir">{{ item.qty }}</span>
+            <form method="post" action="{% url 'cart_update' %}">{% csrf_token %}
+              <input type="hidden" name="key" value="{{ item.key }}"><input type="hidden" name="action" value="inc">
+              <button class="w-7 h-7 border border-stoneLine rounded text-stone-600 hover:border-noir hover:text-noir transition-all text-sm font-bold">+</button>
+            </form>
+            <form method="post" action="{% url 'cart_update' %}" class="ml-3">{% csrf_token %}
+              <input type="hidden" name="key" value="{{ item.key }}"><input type="hidden" name="action" value="del">
+              <button class="text-[11px] font-mono text-stone-400 hover:text-red-500 transition-colors uppercase tracking-wider">Remove</button>
+            </form>
+          </div>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="font-display font-bold text-base text-noir">₹{{ item.sub }}</p>
+          <p class="text-[11px] text-stone-400 font-mono">{{ item.qty }}× ₹{{ item.price }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Order summary -->
+    <div>
+      <div class="bg-plaster border border-stoneLine rounded-lg p-6 gallery-shadow-flat sticky top-24">
+        <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wide mb-5">Order Summary</h2>
+        <div class="space-y-3 text-sm mb-5">
+          <div class="flex justify-between text-stone-600"><span>Subtotal</span><span>₹{{ total }}</span></div>
+          <div class="flex justify-between text-stone-600"><span>Shipping</span><span class="text-emerald-600 font-semibold">Free</span></div>
+          <div class="flex justify-between text-stone-600"><span>Nano tabs &amp; tube</span><span class="text-emerald-600 font-semibold">Included</span></div>
+        </div>
+        <div class="border-t border-stoneLine pt-4 mb-6">
+          <div class="flex justify-between font-display font-extrabold text-lg text-noir"><span>Total</span><span>₹{{ total }}</span></div>
+        </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'checkout' %}" class="block w-full py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm text-center hover:bg-stone-800 transition-all shadow-md">Proceed to Checkout →</a>
+        {% else %}
+        <a href="{% url 'login' %}?next={% url 'checkout' %}" class="block w-full py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm text-center hover:bg-stone-800 transition-all shadow-md">Sign In to Checkout →</a>
+        {% endif %}
+        <a href="{% url 'home' %}" class="block mt-3 text-center text-xs text-stone-500 hover:text-noir transition-colors">← Continue Shopping</a>
+        <!-- Trust badges -->
+        <div class="mt-6 pt-5 border-t border-stoneLine grid grid-cols-3 gap-3 text-center">
+          <div class="text-[10px] text-stone-400"><i class="fa-solid fa-lock text-champagneMuted text-base block mb-1"></i>Secure</div>
+          <div class="text-[10px] text-stone-400"><i class="fa-solid fa-shield-halved text-champagneMuted text-base block mb-1"></i>Protected</div>
+          <div class="text-[10px] text-stone-400"><i class="fa-solid fa-rotate-left text-champagneMuted text-base block mb-1"></i>Easy Returns</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center py-32">
+    <div class="w-24 h-24 bg-plaster rounded-sm flex items-center justify-center mx-auto mb-6 border border-stoneLine gallery-shadow-flat">
+      <i class="fa-solid fa-bag-shopping text-3xl text-stone-300"></i>
+    </div>
+    <h2 class="font-display font-extrabold text-2xl text-noir mb-2">Your vault is empty</h2>
+    <p class="text-stone-500 text-sm mb-6">Discover archival prints for your walls.</p>
+    <a href="{% url 'home' %}" class="inline-block px-6 py-3 bg-noir text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">Browse All Prints</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Checkout — PosterHub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+  <!-- Page header -->
+  <div class="mb-10">
+    <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Final Step</span>
+    <h1 class="font-display font-extrabold text-3xl text-noir mt-1">CHECKOUT</h1>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
+
+    <!-- Left: Shipping + Payment form -->
+    <div class="lg:col-span-2">
+      <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-8">
+
+        <!-- Shipping -->
+        <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6 flex items-center gap-2">
+          <i class="fa-solid fa-location-dot text-champagneMuted"></i> Shipping Details
+        </h2>
+
+        <form method="post" id="checkout-form">
+          {% csrf_token %}
+          <div class="space-y-5 mb-8">
+
+            <div>
+              <label for="name" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Full Name</label>
+              <input id="name" name="name" class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all"
+                value="{{ user.get_full_name|default:user.username }}" required placeholder="Your full name">
+            </div>
+
+            <div>
+              <label for="phone" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Phone Number</label>
+              <input id="phone" name="phone" class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all"
+                pattern="[0-9+ ]{8,15}" required placeholder="+91 98765 43210">
+            </div>
+
+            <div>
+              <label for="address" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Shipping Address</label>
+              <textarea id="address" name="address" rows="4" class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all resize-none"
+                required placeholder="Street, city, state, PIN code"></textarea>
+            </div>
+
+          </div>
+
+          <!-- Divider -->
+          <div class="border-t border-stoneLine my-8"></div>
+
+          <!-- Payment -->
+          <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6 flex items-center gap-2">
+            <i class="fa-solid fa-credit-card text-champagneMuted"></i> Payment Method
+          </h2>
+
+          <div class="space-y-3 mb-8">
+            <label id="pay-cod-label" class="flex items-center gap-4 p-4 bg-plaster border border-stoneLine rounded-sm cursor-pointer hover:border-noir transition-all group">
+              <input type="radio" name="payment" value="Cash on delivery" checked onchange="updatePayLabel()" class="accent-noir">
+              <div>
+                <div class="font-semibold text-sm text-noir">Cash on Delivery</div>
+                <div class="text-stone-500 text-xs mt-0.5">Pay when your poster arrives — no card needed</div>
+              </div>
+              <i class="fa-solid fa-money-bill-wave text-emerald-500 ml-auto text-lg"></i>
+            </label>
+
+            <label id="pay-online-label" class="flex items-center gap-4 p-4 bg-plaster border border-stoneLine rounded-sm cursor-pointer hover:border-noir transition-all group">
+              <input type="radio" name="payment" value="Online (simulated)" onchange="updatePayLabel()" class="accent-noir">
+              <div>
+                <div class="font-semibold text-sm text-noir">Online Payment</div>
+                <div class="text-stone-500 text-xs mt-0.5">UPI · Netbanking · Visa / Mastercard</div>
+              </div>
+              <i class="fa-solid fa-qrcode text-champagneMuted ml-auto text-lg"></i>
+            </label>
+          </div>
+
+          <button id="place-order-btn" type="submit"
+            class="w-full py-4 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all shadow-md flex items-center justify-center gap-3">
+            <i class="fa-solid fa-bag-shopping"></i>
+            Place Order — ₹{{ total }}
+          </button>
+
+          <p class="text-center text-xs text-stone-400 mt-3">
+            <i class="fa-solid fa-lock mr-1 text-champagneMuted"></i>
+            Secured end-to-end. Your data is never shared.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Order Summary -->
+    <div>
+      <div class="bg-plaster border border-stoneLine rounded-lg gallery-shadow-flat p-6 sticky top-24">
+        <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wide mb-5">Your Order</h2>
+
+        <div class="space-y-4 mb-5">
+          {% for i in items %}
+          <div class="flex items-center gap-3">
+            <!-- Thumbnail -->
+            <div class="w-12 h-16 shrink-0 bg-stone-200 rounded overflow-hidden border border-stoneLine">
+              {% if i.poster.image %}
+              <img src="{{ i.poster.image.url }}" alt="{{ i.poster.title }}" class="w-full h-full object-cover">
+              {% else %}
+              <div class="w-full h-full flex items-center justify-center text-[9px] text-stone-400 p-1 text-center">{{ i.poster.title }}</div>
+              {% endif %}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-display font-bold text-xs text-noir truncate">{{ i.poster.title }}</p>
+              <p class="text-[11px] text-stone-500 font-mono mt-0.5">{{ i.size }} × {{ i.qty }}</p>
+            </div>
+            <p class="font-display font-semibold text-sm text-noir whitespace-nowrap">₹{{ i.sub }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="border-t border-stoneLine pt-4 space-y-2.5 text-sm mb-5">
+          <div class="flex justify-between text-stone-600"><span>Subtotal</span><span>₹{{ total }}</span></div>
+          <div class="flex justify-between text-stone-600"><span>Shipping</span><span class="text-emerald-600 font-semibold">Free</span></div>
+          <div class="flex justify-between text-stone-600"><span>Nano tabs & tube</span><span class="text-emerald-600 font-semibold">Included</span></div>
+        </div>
+        <div class="border-t border-stoneLine pt-4">
+          <div class="flex justify-between font-display font-extrabold text-lg text-noir"><span>Total</span><span>₹{{ total }}</span></div>
+        </div>
+
+        <!-- Trust signals -->
+        <div class="mt-6 pt-5 border-t border-stoneLine grid grid-cols-3 gap-3 text-center">
+          <div class="text-[10px] text-stone-400"><i class="fa-solid fa-lock text-champagneMuted text-base block mb-1"></i>Secure</div>
+          <div class="text-[10px] text-stone-400"><i class="fa-solid fa-shield-halved text-champagneMuted text-base block mb-1"></i>Protected</div>
+          <div class="text-[10px] text-stone-400"><i class="fa-solid fa-rotate-left text-champagneMuted text-base block mb-1"></i>Easy Returns</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updatePayLabel(){
+  const cod = document.querySelector('[name=payment][value="Cash on delivery"]').checked;
+  document.getElementById('pay-cod-label').classList.toggle('border-noir', cod);
+  document.getElementById('pay-cod-label').classList.toggle('border-stoneLine', !cod);
+  document.getElementById('pay-online-label').classList.toggle('border-noir', !cod);
+  document.getElementById('pay-online-label').classList.toggle('border-stoneLine', cod);
+}
+updatePayLabel();
+</script>
+{% endblock %}
