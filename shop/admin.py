@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Sum
 from django.utils.html import format_html
-from .models import Category, Poster, Wishlist, Order, OrderItem, Review
+from .models import Category, Poster, Wishlist, Order, OrderItem, Review, Profile, Coupon
 
 
 # ─── Category ────────────────────────────────────────────────────────────────
@@ -108,3 +108,27 @@ class WishlistAdmin(admin.ModelAdmin):
     list_display  = ("user", "poster")
     search_fields = ("user__username", "poster__title")
     list_filter   = ("poster__category",)
+
+
+# ─── Profile ────────────────────────────────────────────────────────
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display  = ("user", "phone", "city", "state", "pincode", "updated")
+    search_fields = ("user__username", "user__email", "phone", "city", "address")
+    list_filter   = ("state",)
+
+
+# ─── Coupon ─────────────────────────────────────────────────────────────
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display   = ("code", "title", "discount", "min_total", "valid_until", "active")
+    list_editable  = ("active",)
+    list_filter    = ("kind", "active", "valid_until")
+    search_fields  = ("code", "title")
+    readonly_fields = ("code",)
+
+    @admin.display(description="Discount")
+    def discount(self, obj):
+        return obj.display()

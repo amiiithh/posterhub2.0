@@ -137,3 +137,32 @@ def register(request):
         login(request, f.save()); return redirect("home")
     return render(request, "registration/register.html", {"form": f})
 
+@login_required
+def profile(request):
+    prof, _ = Profile.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        prof.phone = request.POST.get("phone", prof.phone)[:20]
+        prof.address = request.POST.get("address", prof.address)
+        prof.city = request.POST.get("city", prof.city)[:60]
+        prof.state = request.POST.get("state", prof.state)[:60]
+        prof.pincode = request.POST.get("pincode", prof.pincode)[:10]
+        prof.save()
+        messages.success(request, "Profile updated.")
+        return redirect("profile")
+    orders = request.user.orders.prefetch_related("items__poster").order_by("-created")
+    all_orders = list(orders)
+    stats = {
+        "orders": len(all_orders),
+        "spent": sum(o.total for o in all_orders if o.status != "Cancelled"),
+        "wishlist": Wishlist.objects.filter(user=request.user).count(),
+        "reviews": Review.objects.filter(user=request.user).count(),
+    }
+    coupons = [c for c in Coupon.objects.order_by("-value") if c.is_available()]
+    return render(request, "profile.html", {
+        "prof": prof,
+        "stats": stats,
+        "coupons": coupons,
+        "recent_orders": all_orders[:5],
+        "order_count": len(all_orders),
+    })
+

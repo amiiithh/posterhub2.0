@@ -187,6 +187,10 @@
       <!-- Actions -->
       <div class="flex items-center gap-3">
         {% if user.is_authenticated %}
+          <a href="{% url 'profile' %}" title="My account" aria-label="My account"
+            class="flex items-center justify-center w-9 h-9 rounded-full bg-plaster border border-stoneLine hover:bg-noir hover:text-alabaster hover:border-noir text-noir transition-all">
+            <i class="fa-solid fa-user text-xs"></i>
+          </a>
           <span class="hidden sm:block text-xs text-stone-500 font-medium">Hi, {{ user.username }}</span>
           <form method="post" action="{% url 'logout' %}" style="margin:0">{% csrf_token %}
             <button class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-noir bg-plaster hover:bg-stoneLine/80 border border-stoneLine rounded-full transition-all">
@@ -194,6 +198,10 @@
             </button>
           </form>
         {% else %}
+          <a href="{% url 'login' %}" title="Sign in" aria-label="Sign in"
+            class="flex items-center justify-center w-9 h-9 rounded-full bg-plaster border border-stoneLine hover:bg-noir hover:text-alabaster hover:border-noir text-noir transition-all">
+            <i class="fa-solid fa-user text-xs"></i>
+          </a>
           <a href="{% url 'login' %}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-noir bg-plaster hover:bg-stoneLine/80 border border-stoneLine rounded-full transition-all">Sign In</a>
           <a href="{% url 'register' %}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-alabaster bg-noir hover:bg-obsidian rounded-full transition-all">Register</a>
         {% endif %}
@@ -244,6 +252,7 @@
           <li><a href="{% url 'wishlist' %}" class="hover:text-white transition-colors">Wishlist</a></li>
           <li><a href="{% url 'orders' %}" class="hover:text-white transition-colors">My Orders</a></li>
           {% if user.is_authenticated %}
+          <li><a href="{% url 'profile' %}" class="hover:text-white transition-colors">My Account</a></li>
           <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="hover:text-white transition-colors">Sign Out</button></form></li>
           {% else %}
           <li><a href="{% url 'login' %}" class="hover:text-white transition-colors">Sign In</a></li>

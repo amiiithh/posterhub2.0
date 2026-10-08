@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from shop.models import Category, Poster
+from shop.models import Category, Poster, Coupon
 D = [("Last Reel","movies","Mira Odell","A noir cinema marquee glowing at midnight.",349,260),("Final Frame","movies","Jon Vasek","Minimal one-sheet for a heist thriller.",399,10),
 ("Spin Cycle","music","Dee Rao","Vinyl groove study in warm tones.",349,25),("Loud Hours","music","Kai Mendes","Gig-flyer style poster for live music.",379,330),
 ("Start Before Ready","motivational","Ana Pires","Bold type for a bold morning.",299,200),("One More Mile","motivational","Tom Reyes","Summit at sunrise.",329,18),
@@ -14,4 +14,11 @@ class Command(BaseCommand):
         for t, c, ar, de, pr, h in D:
             Poster.objects.get_or_create(title=t, defaults=dict(category=cats[c], artist=ar, description=de, base_price=pr, hue=h))
         if not User.objects.filter(username="admin").exists(): User.objects.create_superuser("admin", "admin@posterhub.com", "admin123")
+        COUPONS = [
+            dict(code="WELCOME15", title="15% off your first order", kind="percent", value=15, min_total=0),
+            dict(code="STUDIO50", title="₹500 off orders above ₹2,500", kind="flat", value=500, min_total=2500),
+            dict(code="FESTIVE25", title="25% off the festive wall upgrade", kind="percent", value=25, min_total=1500),
+        ]
+        for c in COUPONS:
+            Coupon.objects.get_or_create(code=c["code"], defaults=c)
         self.stdout.write("Seeded. Admin login: admin / admin123")

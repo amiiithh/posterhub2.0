@@ -45,6 +45,31 @@ class OrderItem(models.Model):
     qty = models.PositiveIntegerField()
     price = models.PositiveIntegerField()
 
+class Profile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
+    phone = models.CharField(max_length=20, blank=True)
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=60, blank=True)
+    state = models.CharField(max_length=60, blank=True)
+    pincode = models.CharField(max_length=10, blank=True)
+    updated = models.DateTimeField(auto_now=True)
+    def __str__(self): return f"Profile of {self.user.username}"
+
+class Coupon(models.Model):
+    KIND = [("percent", "Percent off"), ("flat", "Flat INR off")]
+    code = models.CharField(max_length=20, unique=True)
+    title = models.CharField(max_length=80)
+    kind = models.CharField(max_length=10, choices=KIND, default="percent")
+    value = models.PositiveIntegerField(help_text="Percent (1-100) or flat INR amount")
+    min_total = models.PositiveIntegerField(default=0, help_text="Minimum cart total in INR")
+    valid_until = models.DateField(null=True, blank=True, help_text="Blank = never expires")
+    active = models.BooleanField(default=True)
+    def is_available(self):
+        from datetime import date
+        return self.active and (self.valid_until is None or self.valid_until >= date.today())
+    def display(self): return f"{self.value}% OFF" if self.kind == "percent" else f"₹{self.value} OFF"
+    def __str__(self): return self.code
+
 class Review(models.Model):
     poster = models.ForeignKey(Poster, on_delete=models.CASCADE, related_name="reviews")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
