@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — Edit Poster — PosterHub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+  <div class="flex items-center gap-3 mb-10">
+    <a href="{% url 'admin_posters' %}" class="text-xs font-mono uppercase tracking-widest text-champagneMuted hover:underline">← Posters</a>
+    <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">/</span>
+    <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">{{ poster.title }}</span>
+  </div>
+
+  <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+    <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Edit Poster</h2>
+    <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+      </div>
+      {% endif %}
+      <div>
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+      </div>
+      <div>
+        <label for="{{ form.artist.id_for_label }}">Artist</label>
+        {{ form.artist }}
+      </div>
+      <div>
+        <label for="{{ form.category.id_for_label }}">Category</label>
+        {{ form.category }}
+      </div>
+      <div class="col-span-full">
+        <label for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+      </div>
+      <div class="lg:col-span-2 grid grid-cols-2 gap-6 items-end">
+        <div>
+          <label for="{{ form.base_price.id_for_label }}">Base price (₹)</label>
+          {{ form.base_price }}
+        </div>
+        <div>
+          <label for="{{ form.image.id_for_label }}">Image <span class="font-normal text-stone-400">(leave blank to keep)</span></label>
+          {{ form.image }}
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <button type="submit" class="px-5 py-2.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-obsidian transition-all">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>Save changes
+        </button>
+        <a href="{% url 'admin_posters' %}" class="px-4 py-2 bg-plaster text-noir text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stoneLine/80 transition-all">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Current preview -->
+  <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-4">
+      <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400 mb-2">Current image</p>
+      {% if poster.image %}
+      <img src="{{ poster.image.url }}" alt="{{ poster.title }}" class="max-h-32 object-cover rounded-sm">
+      {% else %}
+      <div class="w-full h-32 bg-stone-200 rounded-sm flex items-center justify-center text-stone-400 text-xs">No image</div>
+      {% endif %}
+    </div>
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-4">
+      <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400 mb-2">Title</p>
+      <p class="font-display font-bold text-sm text-noir">{{ poster.title }}</p>
+    </div>
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-4">
+      <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400 mb-2">SKU</p>
+      <p class="font-mono text-xs text-noir">{{ poster.pk }} · {{ poster.category }}</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

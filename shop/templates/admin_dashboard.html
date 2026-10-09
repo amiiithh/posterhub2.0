@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — Dashboard — PosterHub{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+  <div class="flex flex-wrap items-center gap-4 mb-10">
+    <div>
+      <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Store Control</span>
+      <h1 class="font-display font-extrabold text-3xl text-noir mt-1">DASHBOARD</h1>
+    </div>
+    <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">🔄 Refresh</a>
+  </div>
+
+  <!-- KPI cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
+      <i class="fa-solid fa-indian-rupee-sign text-champagne text-sm mb-2"></i>
+      <p class="font-display font-extrabold text-2xl text-noir">₹{{ total_revenue }}</p>
+      <p class="text-[11px] uppercase tracking-wider text-stone-400">Total revenue</p>
+    </div>
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
+      <i class="fa-solid fa-boxes text-champagne text-sm mb-2"></i>
+      <p class="font-display font-extrabold text-2xl text-noir">{{ orders_placed }}</p>
+      <p class="text-[11px] uppercase tracking-wider text-stone-400">Orders placed</p>
+    </div>
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
+      <i class="fa-solid fa-truck text-champagne text-sm mb-2"></i>
+      <p class="font-display font-extrabold text-2xl text-noir">{{ items_shipped }}</p>
+      <p class="text-[11px] uppercase tracking-wider text-stone-400">Items shipped</p>
+    </div>
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
+      <i class="fa-solid fa-ticket text-champagne text-sm mb-2"></i>
+      <p class="font-display font-extrabold text-2xl text-noir">{{ coupons }}</p>
+      <p class="text-[11px] uppercase tracking-wider text-stone-400">Active coupons</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+    <!-- Status split -->
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Orders by status</h2>
+      <div class="space-y-4">
+        {% for val, label in statuses %}
+        <div class="flex items-center gap-4">
+          <span class="text-xs font-mono font-bold w-24 text-noir">{{ label }}</span>
+        <div class="flex-1 h-4 bg-plaster rounded-full overflow-hidden">
+            <div class="h-full rounded-full"
+                 style="width: {{ status_counts.val|default:0|floatformat:0 }}%; background-color: {{ status_colors.val }};">
+            </div>
+          </div>
+          <span class="text-[11px] font-mono font-bold text-noir">{{ status_counts.val }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Delivery pipeline -->
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Delivery pipeline</h2>
+      <div class="flex items-end gap-6 h-full">
+        <div class="flex-1 text-center">
+          <p class="font-display text-3xl font-bold text-emerald-600">{{ delivered_revenue|default:0 }}</p>
+          <p class="text-[11px] uppercase tracking-wider text-stone-400">Delivered revenue</p>
+        </div>
+        <div class="flex-1 text-center">
+          <p class="font-display text-3xl font-bold text-blue-600">{{ processing }}</p>
+          <p class="text-[11px] uppercase tracking-wider text-stone-400">Processing</p>
+        </div>
+        <div class="flex-1 text-center">
+          <p class="font-display text-3xl font-bold text-blue-600">{{ shipped }}</p>
+          <p class="text-[11px] uppercase tracking-wider text-stone-400">Shipped</p>
+        </div>
+        <div class="flex-1 text-center">
+          <p class="font-display text-3xl font-bold text-red-500">{{ cancelled }}</p>
+          <p class="text-[11px] uppercase tracking-wider text-stone-400">Cancelled</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Site stats -->
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Site stats</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="p-4 bg-plaster/50 rounded-sm">
+          <p class="font-mono text-[11px] uppercase tracking-wider text-stone-400">Top sellers</p>
+          <p class="font-display font-bold text-sm text-noir mt-1">{{ top_sellers.0.title|default:"—" }}</p>
+          <p class="text-[11px] text-stone-400 font-mono">{{ top_sellers.0.t|default:0 }} units</p>
+        </div>
+        <div class="p-4 bg-plaster/50 rounded-sm">
+          <p class="font-mono text-[11px] uppercase tracking-wider text-stone-400">Reviews</p>
+          <p class="font-display font-bold text-sm text-noir mt-1">{{ reviews }}</p>
+          <p class="text-[11px] text-stone-400 font-mono">{{ avg_stars }} / 5</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top sellers + recent orders -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Top sellers</h2>
+      <div class="space-y-3">
+        {% for p in top_sellers %}
+        <div class="flex items-center gap-4 p-3 hover:bg-plaster/30 rounded-sm transition-all">
+          <div class="w-10 h-14 shrink-0 bg-stone-200 rounded overflow-hidden border border-stoneLine">
+            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover">{% else %}<div class="w-full h-full flex items-center justify-center text-[9px] text-stone-400">{{ p.title }}</div>{% endif %}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="font-display font-bold text-sm text-noir truncate">{{ p.title }}</p>
+            <p class="text-[11px] text-stone-400 font-mono">{{ p.artist }} · {{ p.category }}</p>
+          </div>
+          <div class="text-right">
+            <p class="font-display font-bold text-sm text-noir">{{ p.t }}</p>
+            <p class="text-[11px] text-stone-400">units sold</p>
+          </div>
+        </div>
+        {% empty %}
+        <p class="col-span-full text-sm text-stone-500">No sales yet — start selling!</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Recent orders</h2>
+      <div class="space-y-3">
+        {% for o in recent_orders %}
+        <div class="flex flex-wrap items-center gap-4 p-3 hover:bg-plaster/30 rounded-sm transition-all">
+          <div class="flex-1 min-w-[140px]">
+            <p class="font-display font-bold text-sm text-noir">#{{ o.pk }}</p>
+            <p class="text-[11px] text-stone-400 font-mono">{{ o.created|date:"d M Y" }} · {{ o.payment }}</p>
+          </div>
+          <span class="px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
+            {% if o.status == 'Processing' %}bg-amber-50 text-amber-700 border border-amber-200
+            {% elif o.status == 'Shipped' %}bg-blue-50 text-blue-700 border border-blue-200
+            {% elif o.status == 'Delivered' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+            {% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">{{ o.status }}</span>
+          <span class="font-display font-extrabold text-base text-noir w-24 text-right">₹{{ o.total }}</span>
+        </div>
+        {% empty %}
+        <p class="col-span-full text-sm text-stone-500">No orders yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

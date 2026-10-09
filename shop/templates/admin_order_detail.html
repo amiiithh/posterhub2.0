@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — Order #{{ order.pk }} — PosterHub{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+  <div class="flex flex-wrap items-center gap-4 mb-10">
+    <div>
+      <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Store Control</span>
+      <a href="{% url 'admin_orders' %}" class="text-xs font-mono uppercase tracking-widest text-champagneMuted hover:underline">← Orders</a>
+      <h1 class="font-display font-extrabold text-3xl text-noir mt-1 ml-2">ORDER #{{ order.pk }}</h1>
+    </div>
+    <form method="post" class="flex items-center gap-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="cancel">
+      <button type="submit" class="px-4 py-2 text-xs font-bold uppercase tracking-widest
+        {% if order.status == 'Processing' %}bg-red-100 text-red-700 hover:bg-red-200 border border-red-200
+        {% else %}bg-plaster text-stone-500 border border-stoneLine cursor-default
+        {% endif %} rounded-sm transition-all" disabled="{{ order.status != 'Processing' }}">
+        <i class="fa-solid fa-xmark mr-2"></i>Cancel Order
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+
+    <!-- Header -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div>
+        <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400">Status</p>
+        <span class="ml-2 px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
+          {% if order.status == 'Processing' %}bg-amber-50 text-amber-700 border border-amber-200
+          {% elif order.status == 'Shipped' %}bg-blue-50 text-blue-700 border border-blue-200
+          {% elif order.status == 'Delivered' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+          {% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">{{ order.status }}</span>
+      </div>
+      <div>
+        <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400">Total</p>
+        <p class="font-display font-extrabold text-lg text-noir">₹{{ order.total:, }}</p>
+      </div>
+      <div>
+        <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400">Payment</p>
+        <p class="font-mono text-xs text-noir">{{ order.payment }}</p>
+      </div>
+      <div>
+        <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400">Placed</p>
+        <p class="font-mono text-xs text-noir">{{ order.created|date:"d M Y, H:i" }}</p>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 p-5 bg-plaster/30 rounded-sm">
+      <div class="sm:col-span-2">
+        <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400">Billing</p>
+        <p class="font-display font-bold text-sm text-noir mb-1">{{ order.name }}</p>
+        <p class="text-[11px] text-stone-500 font-mono">{{ order.phone }}</p>
+        <p class="text-[11px] text-stone-500 font-mono">{{ order.address }}</p>
+      </div>
+      <div class="sm:col-span-2">
+        <p class="text-[11px] font-mono uppercase tracking-wider text-stone-400">Customer</p>
+        <p class="font-display font-bold text-sm text-noir">{{ order.user.username }}</p>
+        <p class="text-[11px] text-stone-500 font-mono">{{ order.user.email|default:"No email on file" }}</p>
+        <p class="text-[11px] text-stone-500 font-mono">Member since {{ order.user.date_joined|date:"M Y" }}</p>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Items</h2>
+    <div class="overflow-x:auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-stoneLine text-left text-[11px] uppercase tracking-wider text-stone-400">
+            <th class="pb-3 pr-4 font-bold">Poster</th>
+            <th class="pb-3 pr-4 font-bold">Size</th>
+            <th class="pb-3 pr-4 font-bold text-right">Qty</th>
+            <th class="pb-3 pr-4 font-bold">Unit price</th>
+            <th class="pb-3 font-bold text-right">Subtotal</th>
+            <th class="pb-3 font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in items %}
+          <tr class="border-b border-stoneLine/70 hover:bg-plaster/30">
+            <td class="pb-3 pr-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-14 shrink-0 bg-stone-200 rounded overflow-hidden border border-stoneLine">
+                  {% if i.poster.image %}
+                  <img src="{{ i.poster.image.url }}" alt="{{ i.poster.title }}" class="w-full h-full object-cover">
+                  {% else %}
+                  <div class="w-full h-full flex items-center justify-center text-[9px] text-stone-400">{{ i.poster.title }}</div>
+                  {% endif %}
+                </div>
+                <div class="min-w-0">
+                  <p class="font-display font-bold text-sm text-noir truncate">{{ i.poster.title }}</p>
+                  <p class="text-[11px] text-stone-400 font-mono">{{ i.poster.category }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="pb-3 pr-4 font-mono text-xs text-stone-500">{{ i.size }}</td>
+            <td class="pb-3 pr-4 text-right font-mono text-xs text-noir">
+              <form method="post" class="inline-flex items-center gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="save">
+                <input type="number" name="qty-{{ i.pk }}" value="{{ i.qty }}" min="1" class="w-14 border border-stoneLine rounded-sm px-1 py-1 text-xs text-noir">
+              </form>
+            </td>
+            <td class="pb-3 pr-4 text-right font-mono text-xs text-stone-500">₹{{ i.price }}</td>
+            <td class="pb-3 pr-4 text-right font-display font-bold text-sm text-noir">₹{{ i.qty | mul: i.price }}</td>
+            <td class="pb-3 pr-4">
+              <a href="#" class="text-[11px] font-bold text-champagne hover:underline">Edit Qty →</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td class="col-span-full py-8 text-center text-stone-500">No items on this order.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="border-t border-stoneLine font-display font-extrabold text-lg text-noir">
+            <td colspan="4" class="pb-3 pr-4 text-right">Total</td>
+            <td class="pb-3 pr-4 text-right">₹{{ order.total:, }}</td>
+            <td colspan="1"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-4">
+      <a href="{% url 'admin_orders' %}" class="px-4 py-2 bg-plaster text-noir text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stoneLine/80 transition-all">← Back to orders</a>
+      <a href="{% url 'admin_order_detail' order.pk %}" class="px-4 py-2 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">🔄 Reload item qty</a>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

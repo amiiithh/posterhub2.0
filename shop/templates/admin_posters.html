@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — Posters — PosterHub{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+  <!-- Header -->
+  <div class="flex flex-wrap items-center gap-4 mb-10">
+    <div>
+      <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Store Control</span>
+      <h1 class="font-display font-extrabold text-3xl text-noir mt-1">POSTERS</h1>
+    </div>
+    <a href="{% url 'admin_posters' %}" class="px-4 py-2 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">+ Add Poster</a>
+  </div>
+
+  <!-- Add / edit poster form -->
+  <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
+    <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6 flex items-center gap-2">
+      <i class="fa-solid fa-pencil-square text-champagneMuted"></i>{{ poster|default:"Add new poster" }}
+    </h2>
+    <form method="post" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+      </div>
+      {% endif %}
+      <div>
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+      </div>
+      <div>
+        <label for="{{ form.artist.id_for_label }}">Artist</label>
+        {{ form.artist }}
+      </div>
+      <div>
+        <label for="{{ form.category.id_for_label }}">Category</label>
+        {{ form.category }}
+      </div>
+      <div class="col-span-full">
+        <label for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+      </div>
+      <div class="lg:col-span-2 grid grid-cols-2 gap-6 items-end">
+        <div>
+          <label for="{{ form.base_price.id_for_label }}">Base price (₹)</label>
+          {{ form.base_price }}
+          <p class="text-[11px] text-stone-400 mt-1">A4 price; sizes are auto-scaled (A3 · A2).</p>
+        </div>
+        <div>
+          <label for="{{ form.image.id_for_label }}">Image</label>
+          {{ form.image }}
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <button type="submit" class="px-5 py-2.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-obsidian transition-all">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>{% if poster %}Update{% else %}Add{% endif %}
+        </button>
+        <a href="{% url 'admin_posters' %}" class="px-4 py-2 bg-plaster text-noir text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stoneLine/80 transition-all">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Categories -->
+  <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8 mt-8">
+    <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6 flex items-center gap-2">
+      <i class="fa-solid fa-folder-open text-champagneMuted"></i>Categories{% if cats %}<span class="font-mono text-[10px] text-stone-400">({{ cats|length }} total)</span>{% endif %}
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {% for c in cats %}
+      <div class="flex items-center justify-between gap-3 p-3 bg-plaster/50 rounded-sm">
+        <div class="min-w-0">
+          <p class="font-display font-bold text-sm text-noir truncate">{{ c.name }}</p>
+          <p class="text-[11px] text-stone-400 font-mono">{{ c.posters.count }} poster{{ c.posters.count|pluralize }}</p>
+        </div>
+        {% if c.posters %}<a href="{% url 'admin_poster_edit' c.posters.first.pk %}" class="text-[11px] text-champagne font-bold hover:underline">View →</a>{% else %}<span class="text-[11px] text-stone-400">No posters yet</span>{% endif %}
+      </div>
+      {% empty %}
+      <p class="col-span-full text-sm text-stone-500">No categories yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
