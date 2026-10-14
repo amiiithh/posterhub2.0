@@ -1,4 +1,6 @@
 Django>=5.0,<6.0
 Pillow>=10.0
+# PostgreSQL driver (DB_ENGINE=postgres):
+psycopg2-binary>=2.9
 # Only needed if you switch to MySQL (DB_ENGINE=mysql):
 # mysqlclient>=2.2

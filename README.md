@@ -38,6 +38,42 @@
 > Windows Python) as shown above, or skip activation entirely and run
 > `venv\Scripts\python manage.py ...`.
 
+## PostgreSQL
+
+The `psycopg2-binary` driver is already in `requirements.txt`. Create a database,
+then set `DB_ENGINE=postgres` (and the connection vars) before migrate/seed/runserver:
+
+    createdb posterhub        # or: CREATE DATABASE posterhub;
+    export DB_ENGINE=postgres
+    export DB_NAME=posterhub DB_USER=postgres DB_PASSWORD=... DB_HOST=127.0.0.1 DB_PORT=5432
+    python manage.py migrate
+    python manage.py seed
+    python manage.py runserver
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `DB_ENGINE` | *(sqlite)* | Set to `postgres` to use PostgreSQL |
+| `DB_NAME` | `posterhub` | Database name |
+| `DB_USER` | `postgres` | Role |
+| `DB_PASSWORD` | *(empty)* | Role password |
+| `DB_HOST` | `127.0.0.1` | Server host |
+| `DB_PORT` | `5432` | Server port |
+| `DB_CONN_MAX_AGE` | `60` | Seconds to reuse a connection (0 = close each request) |
+
+On Windows, use `set DB_ENGINE=postgres` in cmd or `$env:DB_ENGINE="postgres"` in
+PowerShell instead of `export`.
+
+### Move existing data from SQLite
+
+Dump with the old (SQLite) settings, then load into PostgreSQL:
+
+    # 1. With the default SQLite settings
+    python manage.py dumpdata --natural-foreign --natural-primary \
+      -e contenttypes -e auth.Permission -e sessions > data.json
+    # 2. With DB_ENGINE=postgres set
+    python manage.py migrate
+    python manage.py loaddata data.json
+
 ## MySQL
 
 Install mysqlclient, create a database, then set env vars before migrate:

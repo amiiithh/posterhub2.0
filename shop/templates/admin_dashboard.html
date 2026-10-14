@@ -1,149 +1,497 @@
-{% extends 'base.html' %}
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — PosterHub Admin</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sidebar: '#0F1117',
+            mainBg: '#F5F6FA',
+            champagne: '#D4AF37',
+            champagneMuted: '#C5A880',
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Syne"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 4px; }
 
-{% block title %}Admin — Dashboard — PosterHub{% endblock %}
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      color: #9097B0; text-decoration: none; transition: all .18s ease;
+      cursor: pointer; border: none; background: none; width: 100%;
+    }
+    .nav-item:hover { background: #1C1F2A; color: #E2E6F3; }
+    .nav-item.active { background: #252836; color: #FFFFFF; }
+    .nav-item.active .nav-icon { color: #D4AF37; }
+    .nav-icon { width: 18px; text-align: center; font-size: 14px; }
 
-{% block content %}
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    .kpi-card {
+      background: #fff; border-radius: 16px; padding: 22px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.05);
+      border: 1px solid rgba(0,0,0,.05); position: relative; overflow: hidden;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+    .kpi-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .trend-up { color: #10b981; font-size: 11px; font-weight: 600; }
 
-  <div class="flex flex-wrap items-center gap-4 mb-10">
-    <div>
-      <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Store Control</span>
-      <h1 class="font-display font-extrabold text-3xl text-noir mt-1">DASHBOARD</h1>
-    </div>
-    <a href="{% url 'admin_dashboard' %}" class="px-4 py-2 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">🔄 Refresh</a>
-  </div>
+    .status-bar-track { height: 6px; border-radius: 99px; background: #F0F2F8; overflow: hidden; }
+    .status-bar-fill { height: 100%; border-radius: 99px; transition: width 1s cubic-bezier(.4,0,.2,1); }
 
-  <!-- KPI cards -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
-      <i class="fa-solid fa-indian-rupee-sign text-champagne text-sm mb-2"></i>
-      <p class="font-display font-extrabold text-2xl text-noir">₹{{ total_revenue }}</p>
-      <p class="text-[11px] uppercase tracking-wider text-stone-400">Total revenue</p>
-    </div>
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
-      <i class="fa-solid fa-boxes text-champagne text-sm mb-2"></i>
-      <p class="font-display font-extrabold text-2xl text-noir">{{ orders_placed }}</p>
-      <p class="text-[11px] uppercase tracking-wider text-stone-400">Orders placed</p>
-    </div>
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
-      <i class="fa-solid fa-truck text-champagne text-sm mb-2"></i>
-      <p class="font-display font-extrabold text-2xl text-noir">{{ items_shipped }}</p>
-      <p class="text-[11px] uppercase tracking-wider text-stone-400">Items shipped</p>
-    </div>
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-5">
-      <i class="fa-solid fa-ticket text-champagne text-sm mb-2"></i>
-      <p class="font-display font-extrabold text-2xl text-noir">{{ coupons }}</p>
-      <p class="text-[11px] uppercase tracking-wider text-stone-400">Active coupons</p>
-    </div>
-  </div>
+    .data-table th {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .06em; color: #8B92A9; padding: 0 12px 10px 12px;
+      border-bottom: 1px solid #F0F2F8;
+    }
+    .data-table td { padding: 13px 12px; font-size: 13px; border-bottom: 1px solid #F6F7FA; transition: background .15s; }
+    .data-table tr:hover td { background: #FAFBFF; }
+    .data-table tr:last-child td { border-bottom: none; }
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-    <!-- Status split -->
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
-      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Orders by status</h2>
-      <div class="space-y-4">
-        {% for val, label in statuses %}
-        <div class="flex items-center gap-4">
-          <span class="text-xs font-mono font-bold w-24 text-noir">{{ label }}</span>
-        <div class="flex-1 h-4 bg-plaster rounded-full overflow-hidden">
-            <div class="h-full rounded-full"
-                 style="width: {{ status_counts.val|default:0|floatformat:0 }}%; background-color: {{ status_colors.val }};">
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+    .badge-processing { background: #FEF3C7; color: #92400E; }
+    .badge-shipped     { background: #DBEAFE; color: #1E40AF; }
+    .badge-delivered   { background: #D1FAE5; color: #065F46; }
+    .badge-cancelled   { background: #FEE2E2; color: #991B1B; }
+
+    .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .logo-text { background: linear-gradient(135deg, #D4AF37 0%, #F5D473 60%, #C5A880 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .quick-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 14px 10px; border-radius: 12px; border: 1px solid #EAECF5;
+      background: #fff; cursor: pointer; transition: all .18s ease; text-decoration: none;
+      font-size: 11px; font-weight: 600; color: #5A607A; min-width: 0;
+    }
+    .quick-btn:hover { border-color: #D4AF37; background: rgba(212,175,55,.04); color: #D4AF37; }
+    .quick-btn i { font-size: 18px; }
+
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .fade-in-up { animation: fadeInUp .5s ease forwards; }
+    .delay-1 { animation-delay: .08s; opacity: 0; }
+    .delay-2 { animation-delay: .16s; opacity: 0; }
+    .delay-3 { animation-delay: .24s; opacity: 0; }
+    .delay-4 { animation-delay: .32s; opacity: 0; }
+  </style>
+</head>
+<body class="h-full bg-[#F5F6FA]">
+<div class="flex h-screen overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="flex flex-col w-60 shrink-0 bg-[#0F1117] border-r border-[#1E2130] overflow-y-auto">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-5 py-5 border-b border-[#1E2130]">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-lg text-[#0F1117]"
+           style="background: linear-gradient(135deg,#D4AF37,#F5D473)">P</div>
+      <div>
+        <div class="font-display font-bold text-[15px] logo-text leading-none">POSTERHUB</div>
+        <div class="text-[9px] font-semibold uppercase tracking-[.18em] text-[#4A5068] mt-0.5">Admin Panel</div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5">
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2">Overview</p>
+      <a href="{% url 'admin_dashboard' %}" class="nav-item active">
+        <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span> Dashboard
+      </a>
+      <a href="{% url 'admin_orders' %}" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-receipt"></i></span> Orders
+      </a>
+
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2 mt-5">Catalogue</p>
+      <a href="{% url 'admin_posters' %}" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-images"></i></span> Posters
+      </a>
+      <a href="/admin/shop/category/" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-folder-open"></i></span> Categories
+      </a>
+      <a href="/admin/shop/coupon/" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-ticket"></i></span> Coupons
+      </a>
+
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2 mt-5">Community</p>
+      <a href="/admin/shop/review/" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-star-half-stroke"></i></span> Reviews
+      </a>
+      <a href="/admin/shop/wishlist/" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-heart"></i></span> Wishlists
+      </a>
+      <a href="/admin/auth/user/" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Users
+      </a>
+
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2 mt-5">System</p>
+      <a href="/admin/" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-sliders"></i></span> Django Admin
+      </a>
+      <a href="{% url 'home' %}" class="nav-item">
+        <span class="nav-icon"><i class="fa-solid fa-arrow-up-right-from-square"></i></span> View Store
+      </a>
+    </nav>
+
+    <!-- User block -->
+    <div class="px-3 py-4 border-t border-[#1E2130]">
+      <div class="flex items-center gap-3 px-3 py-2">
+        <div class="avatar text-[11px]" style="background:linear-gradient(135deg,#D4AF37,#C5A880)">
+          {{ request.user.username|slice:":1"|upper }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-[12px] font-semibold text-white truncate">{{ request.user.username }}</p>
+          <p class="text-[10px] text-[#4A5068]">{% if request.user.is_superuser %}Superuser{% else %}Staff{% endif %}</p>
+        </div>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+          <button type="submit" title="Sign out" class="text-[#4A5068] hover:text-white transition-colors text-sm">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 overflow-y-auto bg-[#F5F6FA]">
+
+    <!-- Top bar -->
+    <div class="sticky top-0 z-10 bg-[#F5F6FA]/90 backdrop-blur-sm border-b border-[#EAECF5] px-8 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-[#8B92A9]">Store Control</p>
+        <h1 class="font-display font-bold text-2xl text-[#111] leading-tight">Dashboard</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        {% if messages %}
+        <div class="flex flex-col gap-1">
+          {% for m in messages %}
+          <div class="text-[11px] px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold">
+            <i class="fa-solid fa-circle-check mr-1"></i>{{ m }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <a href="{% url 'admin_dashboard' %}"
+           class="flex items-center gap-2 px-4 py-2 text-[12px] font-semibold bg-[#111] text-white rounded-lg hover:bg-[#222] transition-all">
+          <i class="fa-solid fa-rotate-right"></i> Refresh
+        </a>
+      </div>
+    </div>
+
+    <div class="px-8 py-6 space-y-7">
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="kpi-card fade-in-up delay-1">
+          <div class="flex items-start justify-between mb-4">
+            <div class="kpi-icon" style="background:rgba(212,175,55,.12)">
+              <i class="fa-solid fa-indian-rupee-sign" style="color:#D4AF37"></i>
+            </div>
+            <span class="trend-up"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Revenue</span>
+          </div>
+          <p class="font-display font-bold text-2xl text-[#111] leading-none">&#8377;{{ total_revenue|default:0 }}</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#8B92A9] mt-1.5">Total Revenue</p>
+          <p class="text-[11px] text-[#B0B8CF] mt-0.5">All time</p>
+        </div>
+
+        <div class="kpi-card fade-in-up delay-2">
+          <div class="flex items-start justify-between mb-4">
+            <div class="kpi-icon" style="background:rgba(99,102,241,.1)">
+              <i class="fa-solid fa-bag-shopping" style="color:#6366F1"></i>
+            </div>
+            <span class="trend-up"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Orders</span>
+          </div>
+          <p class="font-display font-bold text-2xl text-[#111] leading-none">{{ orders_placed|default:0 }}</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#8B92A9] mt-1.5">Orders Placed</p>
+          <p class="text-[11px] text-[#B0B8CF] mt-0.5">{{ processing }} processing</p>
+        </div>
+
+        <div class="kpi-card fade-in-up delay-3">
+          <div class="flex items-start justify-between mb-4">
+            <div class="kpi-icon" style="background:rgba(16,185,129,.1)">
+              <i class="fa-solid fa-truck" style="color:#10b981"></i>
+            </div>
+            <span class="trend-up"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Shipped</span>
+          </div>
+          <p class="font-display font-bold text-2xl text-[#111] leading-none">{{ items_shipped|default:0 }}</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#8B92A9] mt-1.5">Items Shipped</p>
+          <p class="text-[11px] text-[#B0B8CF] mt-0.5">{{ shipped }} in transit</p>
+        </div>
+
+        <div class="kpi-card fade-in-up delay-4">
+          <div class="flex items-start justify-between mb-4">
+            <div class="kpi-icon" style="background:rgba(245,158,11,.1)">
+              <i class="fa-solid fa-star" style="color:#F59E0B"></i>
+            </div>
+            <span class="trend-up"><i class="fa-solid fa-star mr-1"></i>Rating</span>
+          </div>
+          <p class="font-display font-bold text-2xl text-[#111] leading-none">{{ avg_stars|default:"0.0" }} <span class="text-base font-sans font-normal text-[#8B92A9]">/ 5</span></p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-[#8B92A9] mt-1.5">Avg Rating</p>
+          <p class="text-[11px] text-[#B0B8CF] mt-0.5">{{ reviews }} total reviews</p>
+        </div>
+      </div>
+
+      <!-- Row 2: Status + Pipeline + Actions -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- Orders by status -->
+        <div class="bg-white rounded-2xl border border-[#EAECF5] p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="font-display font-bold text-[15px] text-[#111]">Orders by Status</h2>
+            <a href="{% url 'admin_orders' %}" class="text-[11px] font-semibold text-[#D4AF37] hover:underline">View all &#8594;</a>
+          </div>
+          <div class="space-y-4">
+            {% for s in status_data %}
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[12px] font-semibold text-[#3A3F56]">{{ s.label }}</span>
+                <span class="text-[12px] font-bold text-[#111]">{{ s.count }}</span>
+              </div>
+              <div class="status-bar-track">
+                <div class="status-bar-fill" data-width="{% widthratio s.count orders_placed|default:1 100 %}" style="width:0%; background: {{ s.color }};"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mt-6 pt-4 border-t border-[#F0F2F8] flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-[#8B92A9] uppercase tracking-wider">Total orders</span>
+            <span class="font-display font-bold text-[18px] text-[#111]">{{ orders_placed|default:0 }}</span>
+          </div>
+        </div>
+
+        <!-- Delivery pipeline -->
+        <div class="bg-white rounded-2xl border border-[#EAECF5] p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="font-display font-bold text-[15px] text-[#111]">Delivery Pipeline</h2>
+            <span class="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 font-semibold border border-emerald-100">
+              <i class="fa-solid fa-circle text-[6px] mr-1 animate-pulse"></i>Live
+            </span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3 p-3.5 rounded-xl bg-amber-50 border border-amber-100">
+              <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-clock text-amber-600 text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-[12px] font-semibold text-amber-800">Processing</p>
+                <p class="text-[10px] text-amber-500">Awaiting dispatch</p>
+              </div>
+              <span class="font-display font-bold text-xl text-amber-700">{{ processing }}</span>
+            </div>
+            <div class="flex items-center gap-3 p-3.5 rounded-xl bg-blue-50 border border-blue-100">
+              <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-truck text-blue-600 text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-[12px] font-semibold text-blue-800">Shipped</p>
+                <p class="text-[10px] text-blue-500">In transit</p>
+              </div>
+              <span class="font-display font-bold text-xl text-blue-700">{{ shipped }}</span>
+            </div>
+            <div class="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-100">
+              <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-[12px] font-semibold text-emerald-800">Delivered</p>
+                <p class="text-[10px] text-emerald-500">&#8377;{{ delivered_revenue|default:0 }} revenue</p>
+              </div>
+              <span class="font-display font-bold text-xl text-emerald-700">&#10003;</span>
+            </div>
+            <div class="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 border border-red-100">
+              <div class="w-9 h-9 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-xmark text-red-600 text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-[12px] font-semibold text-red-800">Cancelled</p>
+                <p class="text-[10px] text-red-500">Lost orders</p>
+              </div>
+              <span class="font-display font-bold text-xl text-red-700">{{ cancelled }}</span>
             </div>
           </div>
-          <span class="text-[11px] font-mono font-bold text-noir">{{ status_counts.val }}</span>
         </div>
-        {% endfor %}
-      </div>
-    </div>
 
-    <!-- Delivery pipeline -->
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
-      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Delivery pipeline</h2>
-      <div class="flex items-end gap-6 h-full">
-        <div class="flex-1 text-center">
-          <p class="font-display text-3xl font-bold text-emerald-600">{{ delivered_revenue|default:0 }}</p>
-          <p class="text-[11px] uppercase tracking-wider text-stone-400">Delivered revenue</p>
-        </div>
-        <div class="flex-1 text-center">
-          <p class="font-display text-3xl font-bold text-blue-600">{{ processing }}</p>
-          <p class="text-[11px] uppercase tracking-wider text-stone-400">Processing</p>
-        </div>
-        <div class="flex-1 text-center">
-          <p class="font-display text-3xl font-bold text-blue-600">{{ shipped }}</p>
-          <p class="text-[11px] uppercase tracking-wider text-stone-400">Shipped</p>
-        </div>
-        <div class="flex-1 text-center">
-          <p class="font-display text-3xl font-bold text-red-500">{{ cancelled }}</p>
-          <p class="text-[11px] uppercase tracking-wider text-stone-400">Cancelled</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Site stats -->
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
-      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Site stats</h2>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="p-4 bg-plaster/50 rounded-sm">
-          <p class="font-mono text-[11px] uppercase tracking-wider text-stone-400">Top sellers</p>
-          <p class="font-display font-bold text-sm text-noir mt-1">{{ top_sellers.0.title|default:"—" }}</p>
-          <p class="text-[11px] text-stone-400 font-mono">{{ top_sellers.0.t|default:0 }} units</p>
-        </div>
-        <div class="p-4 bg-plaster/50 rounded-sm">
-          <p class="font-mono text-[11px] uppercase tracking-wider text-stone-400">Reviews</p>
-          <p class="font-display font-bold text-sm text-noir mt-1">{{ reviews }}</p>
-          <p class="text-[11px] text-stone-400 font-mono">{{ avg_stars }} / 5</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top sellers + recent orders -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
-      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Top sellers</h2>
-      <div class="space-y-3">
-        {% for p in top_sellers %}
-        <div class="flex items-center gap-4 p-3 hover:bg-plaster/30 rounded-sm transition-all">
-          <div class="w-10 h-14 shrink-0 bg-stone-200 rounded overflow-hidden border border-stoneLine">
-            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover">{% else %}<div class="w-full h-full flex items-center justify-center text-[9px] text-stone-400">{{ p.title }}</div>{% endif %}
+        <!-- Quick actions + health -->
+        <div class="flex flex-col gap-5">
+          <div class="bg-white rounded-2xl border border-[#EAECF5] p-6 shadow-sm">
+            <h2 class="font-display font-bold text-[15px] text-[#111] mb-4">Quick Actions</h2>
+            <div class="grid grid-cols-2 gap-2.5">
+              <a href="{% url 'admin_posters' %}" class="quick-btn">
+                <i class="fa-solid fa-plus text-[#6366F1]"></i>
+                <span>Add Poster</span>
+              </a>
+              <a href="{% url 'admin_orders' %}" class="quick-btn">
+                <i class="fa-solid fa-receipt text-[#D4AF37]"></i>
+                <span>Orders</span>
+              </a>
+              <a href="/admin/shop/coupon/add/" class="quick-btn">
+                <i class="fa-solid fa-ticket text-[#10b981]"></i>
+                <span>New Coupon</span>
+              </a>
+              <a href="/admin/shop/review/" class="quick-btn">
+                <i class="fa-solid fa-star text-[#F59E0B]"></i>
+                <span>Reviews</span>
+              </a>
+            </div>
           </div>
-          <div class="min-w-0 flex-1">
-            <p class="font-display font-bold text-sm text-noir truncate">{{ p.title }}</p>
-            <p class="text-[11px] text-stone-400 font-mono">{{ p.artist }} · {{ p.category }}</p>
-          </div>
-          <div class="text-right">
-            <p class="font-display font-bold text-sm text-noir">{{ p.t }}</p>
-            <p class="text-[11px] text-stone-400">units sold</p>
+          <div class="bg-[#0F1117] rounded-2xl p-6 flex-1">
+            <h2 class="font-display font-bold text-[14px] text-white mb-4">Store Health</h2>
+            <div class="space-y-3.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[12px] text-[#6B7290]">Active coupons</span>
+                <span class="text-[13px] font-bold text-[#D4AF37]">{{ coupons }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[12px] text-[#6B7290]">Total reviews</span>
+                <span class="text-[13px] font-bold text-white">{{ reviews }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[12px] text-[#6B7290]">Average rating</span>
+                <span class="text-[13px] font-bold text-[#D4AF37]">&#9733; {{ avg_stars }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[12px] text-[#6B7290]">Delivered revenue</span>
+                <span class="text-[13px] font-bold text-emerald-400">&#8377;{{ delivered_revenue|default:0 }}</span>
+              </div>
+              <div class="pt-3 mt-1 border-t border-[#1E2130]">
+                <a href="{% url 'home' %}" class="text-[11px] text-[#4A5068] hover:text-[#D4AF37] transition-colors flex items-center gap-2">
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> View live store
+                </a>
+              </div>
+            </div>
           </div>
         </div>
-        {% empty %}
-        <p class="col-span-full text-sm text-stone-500">No sales yet — start selling!</p>
-        {% endfor %}
       </div>
-    </div>
 
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat p-6 lg:p-8">
-      <h2 class="font-display font-bold text-sm text-noir uppercase tracking-wider mb-6">Recent orders</h2>
-      <div class="space-y-3">
-        {% for o in recent_orders %}
-        <div class="flex flex-wrap items-center gap-4 p-3 hover:bg-plaster/30 rounded-sm transition-all">
-          <div class="flex-1 min-w-[140px]">
-            <p class="font-display font-bold text-sm text-noir">#{{ o.pk }}</p>
-            <p class="text-[11px] text-stone-400 font-mono">{{ o.created|date:"d M Y" }} · {{ o.payment }}</p>
+      <!-- Row 3: Top sellers + Recent orders -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Top sellers -->
+        <div class="bg-white rounded-2xl border border-[#EAECF5] shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-5 border-b border-[#F0F2F8]">
+            <h2 class="font-display font-bold text-[15px] text-[#111]">Top Sellers</h2>
+            <a href="{% url 'admin_posters' %}" class="text-[11px] font-semibold text-[#D4AF37] hover:underline">Manage &#8594;</a>
           </div>
-          <span class="px-2 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
-            {% if o.status == 'Processing' %}bg-amber-50 text-amber-700 border border-amber-200
-            {% elif o.status == 'Shipped' %}bg-blue-50 text-blue-700 border border-blue-200
-            {% elif o.status == 'Delivered' %}bg-emerald-50 text-emerald-700 border border-emerald-200
-            {% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">{{ o.status }}</span>
-          <span class="font-display font-extrabold text-base text-noir w-24 text-right">₹{{ o.total }}</span>
+          <table class="data-table w-full">
+            <thead>
+              <tr>
+                <th class="text-left pl-6">Poster</th>
+                <th class="text-left">Category</th>
+                <th class="text-right pr-6">Units</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in top_sellers %}
+              <tr>
+                <td class="pl-6">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-12 rounded-md overflow-hidden border border-[#EAECF5] shrink-0">
+                      {% if p.image %}
+                      <img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover">
+                      {% else %}
+                      <div class="w-full h-full flex items-center justify-center" style="background:hsl({{ p.hue }},50%,70%)">
+                        <i class="fa-solid fa-image text-white text-[8px]"></i>
+                      </div>
+                      {% endif %}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="font-semibold text-[13px] text-[#111] truncate max-w-[130px]">{{ p.title }}</p>
+                      <p class="text-[11px] text-[#8B92A9] truncate">{{ p.artist }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="text-[11px] font-semibold px-2 py-1 bg-[#F5F6FA] rounded-md text-[#5A607A]">{{ p.category }}</span></td>
+                <td class="pr-6 text-right">
+                  <span class="font-display font-bold text-[15px] text-[#111]">{{ p.t }}</span>
+                  <p class="text-[10px] text-[#8B92A9]">units</p>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="text-center py-10 text-[#8B92A9] text-sm">No sales data yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-        {% empty %}
-        <p class="col-span-full text-sm text-stone-500">No orders yet.</p>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
 
+        <!-- Recent orders -->
+        <div class="bg-white rounded-2xl border border-[#EAECF5] shadow-sm overflow-hidden">
+          <div class="flex items-center justify-between px-6 py-5 border-b border-[#F0F2F8]">
+            <h2 class="font-display font-bold text-[15px] text-[#111]">Recent Orders</h2>
+            <a href="{% url 'admin_orders' %}" class="text-[11px] font-semibold text-[#D4AF37] hover:underline">View all &#8594;</a>
+          </div>
+          <table class="data-table w-full">
+            <thead>
+              <tr>
+                <th class="text-left pl-6">#</th>
+                <th class="text-left">Customer</th>
+                <th class="text-left">Status</th>
+                <th class="text-right pr-6">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for o in recent_orders %}
+              <tr class="cursor-pointer" onclick="window.location='{% url 'admin_order_detail' o.pk %}'">
+                <td class="pl-6">
+                  <span class="font-mono text-[12px] font-semibold text-[#8B92A9]">#{{ o.pk }}</span>
+                  <p class="text-[10px] text-[#B0B8CF]">{{ o.created|date:"d M" }}</p>
+                </td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar text-[10px]" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">
+                      {{ o.user.username|slice:":1"|upper }}
+                    </div>
+                    <span class="text-[12px] font-semibold text-[#111]">{{ o.user.username }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge {% if o.status == 'Processing' %}badge-processing{% elif o.status == 'Shipped' %}badge-shipped{% elif o.status == 'Delivered' %}badge-delivered{% else %}badge-cancelled{% endif %}">
+                    {% if o.status == 'Processing' %}<i class="fa-solid fa-clock text-[9px]"></i>
+                    {% elif o.status == 'Shipped' %}<i class="fa-solid fa-truck text-[9px]"></i>
+                    {% elif o.status == 'Delivered' %}<i class="fa-solid fa-circle-check text-[9px]"></i>
+                    {% else %}<i class="fa-solid fa-xmark text-[9px]"></i>{% endif %}
+                    {{ o.status }}
+                  </span>
+                </td>
+                <td class="pr-6 text-right">
+                  <span class="font-display font-bold text-[14px] text-[#111]">&#8377;{{ o.total }}</span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-10 text-[#8B92A9] text-sm">No orders yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
 </div>
-{% endblock %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Animate status bars
+    document.querySelectorAll('.status-bar-fill').forEach(bar => {
+      const w = bar.dataset.width || '0';
+      setTimeout(() => { bar.style.width = w + '%'; }, 400);
+    });
+  });
+</script>
+</body>
+</html>

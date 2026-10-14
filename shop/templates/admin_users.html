@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Users — PosterHub Admin</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','sans-serif'],display:['"Syne"','sans-serif']}}}}</script>
+  <style>
+    *{box-sizing:border-box;}body{font-family:'Plus Jakarta Sans',sans-serif;}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:#2a2d3e;border-radius:4px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:500;color:#9097B0;text-decoration:none;transition:all .18s ease;border:none;background:none;width:100%;}
+    .nav-item:hover{background:#1C1F2A;color:#E2E6F3;}.nav-item.active{background:#252836;color:#fff;}.nav-item.active .nav-icon{color:#D4AF37;}
+    .nav-icon{width:18px;text-align:center;font-size:14px;}
+    .avatar-sm{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
+    .logo-text{background:linear-gradient(135deg,#D4AF37 0%,#F5D473 60%,#C5A880 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .data-table th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#8B92A9;padding:0 12px 10px 12px;border-bottom:1px solid #F0F2F8;}
+    .data-table td{padding:12px 12px;font-size:13px;border-bottom:1px solid #F6F7FA;transition:background .15s;}
+    .data-table tr:hover td{background:#FAFBFF;}.data-table tr:last-child td{border-bottom:none;}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600;}
+    .badge-staff{background:#EDE9FE;color:#5B21B6;}.badge-super{background:#FEF3C7;color:#92400E;}.badge-active{background:#D1FAE5;color:#065F46;}.badge-inactive{background:#FEE2E2;color:#991B1B;}
+    input[type=text],input[type=search]{width:100%;padding:8px 12px;border-radius:8px;border:1px solid #EAECF5;font-size:13px;color:#111;background:#fff;outline:none;transition:border .15s;}
+    input:focus{border-color:#D4AF37;box-shadow:0 0 0 3px rgba(212,175,55,.12);}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+    .fade-in{animation:fadeInUp .4s ease forwards;}
+  </style>
+</head>
+<body class="h-full bg-[#F5F6FA]">
+<div class="flex h-screen overflow-hidden">
+  <aside class="flex flex-col w-60 shrink-0 bg-[#0F1117] border-r border-[#1E2130] overflow-y-auto">
+    <div class="flex items-center gap-3 px-5 py-5 border-b border-[#1E2130]">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-lg text-[#0F1117]" style="background:linear-gradient(135deg,#D4AF37,#F5D473)">P</div>
+      <div><div class="font-display font-bold text-[15px] logo-text leading-none">POSTERHUB</div><div class="text-[9px] font-semibold uppercase tracking-[.18em] text-[#4A5068] mt-0.5">Admin Panel</div></div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-0.5">
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2">Overview</p>
+      <a href="{% url 'admin_dashboard' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span> Dashboard</a>
+      <a href="{% url 'admin_orders' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-receipt"></i></span> Orders</a>
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2 mt-5">Catalogue</p>
+      <a href="{% url 'admin_posters' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-images"></i></span> Posters</a>
+      <a href="{% url 'admin_categories' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-folder-open"></i></span> Categories</a>
+      <a href="{% url 'admin_coupons' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-ticket"></i></span> Coupons</a>
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2 mt-5">Community</p>
+      <a href="{% url 'admin_reviews' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-star-half-stroke"></i></span> Reviews</a>
+      <a href="{% url 'admin_users' %}" class="nav-item active"><span class="nav-icon"><i class="fa-solid fa-users"></i></span> Users</a>
+      <p class="text-[10px] font-bold uppercase tracking-[.12em] text-[#3A3F56] px-3 mb-2 mt-5">System</p>
+      <a href="/admin/" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-sliders"></i></span> Django Admin</a>
+      <a href="{% url 'home' %}" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-up-right-from-square"></i></span> View Store</a>
+    </nav>
+    <div class="px-3 py-4 border-t border-[#1E2130]">
+      <div class="flex items-center gap-3 px-3 py-2">
+        <div class="avatar-sm text-[11px]" style="background:linear-gradient(135deg,#D4AF37,#C5A880)">{{ request.user.username|slice:":1"|upper }}</div>
+        <div class="min-w-0 flex-1"><p class="text-[12px] font-semibold text-white truncate">{{ request.user.username }}</p><p class="text-[10px] text-[#4A5068]">{% if request.user.is_superuser %}Superuser{% else %}Staff{% endif %}</p></div>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="text-[#4A5068] hover:text-white transition-colors text-sm"><i class="fa-solid fa-arrow-right-from-bracket"></i></button></form>
+      </div>
+    </div>
+  </aside>
+  <main class="flex-1 overflow-y-auto bg-[#F5F6FA]">
+    <div class="sticky top-0 z-10 bg-[#F5F6FA]/90 backdrop-blur-sm border-b border-[#EAECF5] px-8 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-[#8B92A9]">Community</p>
+        <h1 class="font-display font-bold text-2xl text-[#111]">Users</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        {% if messages %}
+        <div class="flex flex-col gap-1">{% for m in messages %}<div class="text-[11px] px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i>{{ m }}</div>{% endfor %}</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="px-8 py-6 space-y-5 fade-in">
+      <!-- Search -->
+      <form method="get" class="flex gap-3">
+        <div class="relative flex-1 max-w-md">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#8B92A9] text-sm"></i>
+          <input type="search" name="q" value="{{ q }}" placeholder="Search username or email…" class="pl-9">
+        </div>
+        <button type="submit" class="px-4 py-2.5 bg-[#111] text-white text-[12px] font-bold rounded-lg hover:bg-[#222] transition-all">Search</button>
+        {% if q %}<a href="{% url 'admin_users' %}" class="px-4 py-2.5 border border-[#EAECF5] text-[#5A607A] text-[12px] font-semibold rounded-lg hover:bg-white transition-all flex items-center gap-1.5"><i class="fa-solid fa-xmark"></i> Clear</a>{% endif %}
+      </form>
+      <!-- Table -->
+      <div class="bg-white rounded-2xl border border-[#EAECF5] overflow-hidden" style="box-shadow:0 1px 3px rgba(0,0,0,.06)">
+        <div class="px-6 py-4 border-b border-[#F0F2F8]">
+          <p class="font-semibold text-sm text-[#111]">All Users{% if q %} — results for "{{ q }}"{% endif %}</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full data-table">
+            <thead>
+              <tr>
+                <th class="text-left pl-6">User</th>
+                <th class="text-left">Email</th>
+                <th class="text-left">Joined</th>
+                <th class="text-left">Orders</th>
+                <th class="text-left">Spent</th>
+                <th class="text-left">Roles</th>
+                {% if request.user.is_superuser %}<th class="text-right pr-6">Toggle</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td class="pl-6">
+                  <div class="flex items-center gap-3">
+                    <div class="avatar-sm text-[11px]" style="background:hsl({{ u.id|add:'180'|divisibleby:'360'|yesno:'0,0' }}{{ u.id|add:'180' }},60%,55%)">{{ u.username|slice:":1"|upper }}</div>
+                    <div>
+                      <p class="font-semibold text-[#111]">{{ u.username }}</p>
+                      {% if u.first_name %}<p class="text-xs text-[#8B92A9]">{{ u.first_name }} {{ u.last_name }}</p>{% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td class="font-mono text-xs text-[#5A607A]">{{ u.email|default:"—" }}</td>
+                <td class="text-xs text-[#8B92A9]">{{ u.date_joined|date:"d M Y" }}</td>
+                <td class="font-semibold text-[#111]">{{ u.order_count|default:0 }}</td>
+                <td class="font-mono text-xs text-[#5A607A]">{% if u.total_spent %}₹{{ u.total_spent }}{% else %}—{% endif %}</td>
+                <td>
+                  <div class="flex gap-1 flex-wrap">
+                    {% if u.is_superuser %}<span class="badge badge-super">Superuser</span>{% elif u.is_staff %}<span class="badge badge-staff">Staff</span>{% endif %}
+                    {% if u.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+                  </div>
+                </td>
+                {% if request.user.is_superuser %}
+                <td class="pr-6 text-right">
+                  {% if u.pk != request.user.pk %}
+                  <div class="flex items-center justify-end gap-2">
+                    <form method="post">{% csrf_token %}
+                      <input type="hidden" name="user_id" value="{{ u.pk }}">
+                      <input type="hidden" name="toggle" value="staff">
+                      <button type="submit" class="px-2.5 py-1 text-[10px] font-bold rounded {% if u.is_staff %}bg-purple-50 text-purple-700 hover:bg-purple-100{% else %}bg-[#F5F6FA] text-[#5A607A] hover:bg-[#EAECF5]{% endif %} transition-all">{% if u.is_staff %}Revoke Staff{% else %}Grant Staff{% endif %}</button>
+                    </form>
+                    <form method="post">{% csrf_token %}
+                      <input type="hidden" name="user_id" value="{{ u.pk }}">
+                      <input type="hidden" name="toggle" value="active">
+                      <button type="submit" class="px-2.5 py-1 text-[10px] font-bold rounded {% if u.is_active %}bg-red-50 text-red-600 hover:bg-red-100{% else %}bg-emerald-50 text-emerald-700 hover:bg-emerald-100{% endif %} transition-all">{% if u.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+                    </form>
+                  </div>
+                  {% else %}
+                  <span class="text-xs text-[#B0B8CF]">You</span>
+                  {% endif %}
+                </td>
+                {% endif %}
+              </tr>
+              {% empty %}
+              <tr><td colspan="7" class="py-16 text-center text-[#8B92A9]">No users found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-[#F0F2F8] flex items-center justify-between">
+          <p class="text-xs text-[#8B92A9]">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+          <div class="flex gap-2">
+            {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}" class="px-3 py-1.5 text-[11px] font-bold bg-[#F5F6FA] rounded-lg hover:bg-[#EAECF5]"><i class="fa-solid fa-chevron-left"></i></a>{% endif %}
+            {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}" class="px-3 py-1.5 text-[11px] font-bold bg-[#F5F6FA] rounded-lg hover:bg-[#EAECF5]"><i class="fa-solid fa-chevron-right"></i></a>{% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

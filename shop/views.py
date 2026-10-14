@@ -6,6 +6,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.mail import send_mail
 from django.db.models import Avg, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from .models import *
 
@@ -128,7 +129,13 @@ def wishlist(request):
 @require_POST
 def wish_toggle(request, pk):
     w, made = Wishlist.objects.get_or_create(user=request.user, poster_id=pk)
-    if not made: w.delete()
+    if made:
+        messages.success(request, "Saved to wishlist.")
+    else:
+        w.delete(); messages.info(request, "Removed from wishlist.")
+    nxt = request.POST.get("next")
+    if nxt and url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(nxt)
     return redirect("detail", pk=pk)
 
 def register(request):

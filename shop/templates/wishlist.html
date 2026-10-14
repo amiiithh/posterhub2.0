@@ -41,6 +41,12 @@
         <button class="size-pill">A2</button>
         <a href="{% url 'detail' p.pk %}" class="size-pill text-center">→</a>
       </div>
+      <form method="post" action="{% url 'wish_toggle' p.pk %}" class="mt-2">{% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'wishlist' %}"/>
+        <button type="submit" class="w-full text-center text-[10px] font-mono uppercase tracking-widest text-stone-400 hover:text-red-500 transition-colors">
+          <i class="fa-solid fa-heart-crack mr-1"></i> Remove from wishlist
+        </button>
+      </form>
     </div>
     {% endfor %}
   </div>

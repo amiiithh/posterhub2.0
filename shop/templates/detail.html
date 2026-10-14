@@ -65,16 +65,21 @@
           <button type="submit" class="flex-1 py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all shadow-md">
             <i class="fa-solid fa-bag-shopping mr-2"></i> Add to Vault
           </button>
-          {% if user.is_authenticated %}
-          <form method="post" action="{% url 'wish_toggle' p.pk %}" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="px-4 py-3.5 border {% if wished %}border-champagne bg-champagne/10 text-champagne{% else %}border-stoneLine text-stone-500 hover:border-noir{% endif %} rounded-sm transition-all">
-              <i class="fa-{% if wished %}solid{% else %}regular{% endif %} fa-heart"></i>
-            </button>
-          </form>
-          {% endif %}
         </div>
       </form>
+
+      {% if user.is_authenticated %}
+      <div class="flex gap-3 flex-wrap">
+        {# Binds to the sibling #wish-form below by id: an inner form tag here would be discarded by the browser, so the heart would submit the cart form instead. #}
+        <button type="submit" form="wish-form" title="{% if wished %}Remove from wishlist{% else %}Save to wishlist{% endif %}" aria-label="{% if wished %}Remove from wishlist{% else %}Save to wishlist{% endif %}" class="px-4 py-3.5 border {% if wished %}border-champagne bg-champagne/10 text-champagne{% else %}border-stoneLine text-stone-500 hover:border-noir{% endif %} rounded-sm transition-all">
+          <i class="fa-{% if wished %}solid{% else %}regular{% endif %} fa-heart"></i>
+        </button>
+      </div>
+
+
+      {% if user.is_authenticated %}{# Standalone wishlist toggle form — must stay outside the cart form above. #}
+      <form id="wish-form" method="post" action="{% url 'wish_toggle' p.pk %}">{% csrf_token %}</form>
+      {% endif %}
 
       <hr class="border-stoneLine my-8"/>
       <!-- Specs -->
