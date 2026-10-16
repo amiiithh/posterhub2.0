@@ -173,16 +173,24 @@
         </a>
         <div class="flex items-start justify-between mb-1">
           <h4 class="font-display font-bold text-sm text-noir leading-tight">{{ p.title }}</h4>
-          <span class="font-display font-semibold text-sm text-noir whitespace-nowrap ml-2">₹{{ p.base_price }}</span>
+          <span class="font-semibold text-sm text-noir whitespace-nowrap ml-2 poster-price" data-a4="{{ p.base_price }}" data-a3="{{ p.price_a3 }}" data-a2="{{ p.price_a2 }}">₹{{ p.base_price }}</span>
         </div>
         <p class="text-[11px] text-stone-500 mb-3">{{ p.category }}{% if p.avg %} · <span class="text-champagne font-semibold">{{ p.avg|floatformat:1 }}★</span>{% endif %}</p>
-        <!-- Size selector pills -->
-        <div class="grid grid-cols-4 gap-1.5 mt-auto">
-          <button class="size-pill active">A4</button>
-          <button class="size-pill">A3</button>
-          <button class="size-pill">A2</button>
-          <a href="{% url 'detail' p.pk %}" class="size-pill text-center">→</a>
-        </div>
+        <!-- Size selector + quick add-to-cart -->
+        <form method="post" action="{% url 'cart_add' %}" class="mt-auto">
+          {% csrf_token %}
+          <input type="hidden" name="poster" value="{{ p.pk }}">
+          <input type="hidden" name="size" class="selected-size" value="A4">
+          <div class="flex items-center gap-1.5">
+            <button type="button" class="size-pill active" data-size="A4" data-price="{{ p.base_price }}">A4</button>
+            <button type="button" class="size-pill" data-size="A3" data-price="{{ p.price_a3 }}">A3</button>
+            <button type="button" class="size-pill" data-size="A2" data-price="{{ p.price_a2 }}">A2</button>
+            <a href="{% url 'detail' p.pk %}" class="size-pill text-center flex-shrink-0" title="View details">→</a>
+            <button type="submit" class="ml-auto flex-shrink-0 w-8 h-8 bg-noir text-white rounded-full flex items-center justify-center hover:bg-stone-700 transition-colors" title="Add to cart">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+            </button>
+          </div>
+        </form>
       </div>
       {% endfor %}
     </div>
@@ -238,14 +246,20 @@
       if(pill)pill.textContent=btn.dataset.label;
     });
   });
-  // Size pill toggle (UI only)
-  document.querySelectorAll('.size-pill').forEach(p=>{
-    p.addEventListener('click',function(){
-      if(this.tagName==='BUTTON'){
-        const siblings=this.parentElement.querySelectorAll('button.size-pill');
-        siblings.forEach(s=>s.classList.remove('active'));
-        this.classList.add('active');
-      }
+  // Size pill toggle + live price update + hidden size input
+  document.querySelectorAll('.size-pill[data-size]').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      const form=this.closest('form');
+      if(!form)return;
+      // Update active state
+      form.querySelectorAll('button.size-pill').forEach(s=>s.classList.remove('active'));
+      this.classList.add('active');
+      // Write selected size into hidden field
+      const sizeInput=form.querySelector('.selected-size');
+      if(sizeInput)sizeInput.value=this.dataset.size;
+      // Update displayed price
+      const priceEl=form.closest('.group,.lift-on-scroll')?.querySelector('.poster-price');
+      if(priceEl&&this.dataset.price)priceEl.textContent='₹'+this.dataset.price;
     });
   });
 </script>
