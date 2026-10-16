@@ -174,7 +174,21 @@
           <a href="{% url 'home' %}" class="hover:text-noir hover:underline underline-offset-8 transition-all">All Prints</a>
           <a href="{% url 'wishlist' %}" class="hover:text-noir hover:underline underline-offset-8 transition-all">Wishlist</a>
           <a href="{% url 'orders' %}" class="hover:text-noir hover:underline underline-offset-8 transition-all">Orders</a>
-          {% if user.is_staff %}<a href="/admin/" class="hover:text-noir hover:underline underline-offset-8 transition-all">Admin</a>{% endif %}
+          {% if user.is_staff %}
+          <div class="relative group">
+            <a href="{% url 'admin_dashboard' %}" class="flex items-center gap-1.5 hover:text-noir hover:underline underline-offset-8 transition-all">
+              <i class="fa-solid fa-gauge-high text-champagneMuted text-xs"></i> Dashboard
+            </a>
+            <div class="absolute top-full left-0 mt-2 w-48 bg-galleryWhite border border-stoneLine rounded-lg shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200 z-50 py-1">
+              <a href="{% url 'admin_dashboard' %}" class="flex items-center gap-2 px-4 py-2.5 text-xs text-charcoal hover:bg-plaster hover:text-noir transition-colors"><i class="fa-solid fa-chart-line w-4 text-champagneMuted"></i> Analytics</a>
+              <a href="{% url 'admin_orders' %}" class="flex items-center gap-2 px-4 py-2.5 text-xs text-charcoal hover:bg-plaster hover:text-noir transition-colors"><i class="fa-solid fa-box w-4 text-champagneMuted"></i> Orders</a>
+              <a href="{% url 'admin_posters' %}" class="flex items-center gap-2 px-4 py-2.5 text-xs text-charcoal hover:bg-plaster hover:text-noir transition-colors"><i class="fa-solid fa-image w-4 text-champagneMuted"></i> Posters</a>
+              <a href="{% url 'admin_coupons' %}" class="flex items-center gap-2 px-4 py-2.5 text-xs text-charcoal hover:bg-plaster hover:text-noir transition-colors"><i class="fa-solid fa-tag w-4 text-champagneMuted"></i> Coupons</a>
+              <a href="{% url 'admin_reviews' %}" class="flex items-center gap-2 px-4 py-2.5 text-xs text-charcoal hover:bg-plaster hover:text-noir transition-colors"><i class="fa-solid fa-star w-4 text-champagneMuted"></i> Reviews</a>
+              {% if user.is_superuser %}<div class="border-t border-stoneLine my-1"></div><a href="/admin/" class="flex items-center gap-2 px-4 py-2.5 text-xs text-charcoal hover:bg-plaster hover:text-noir transition-colors"><i class="fa-solid fa-gear w-4 text-stone-400"></i> Django Admin</a>{% endif %}
+            </div>
+          </div>
+          {% endif %}
         </nav>
       </div>
       <!-- Search -->
