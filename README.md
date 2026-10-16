@@ -1,87 +1,153 @@
-# PosterHub (Django)
+# PosterHub
 
-## Run locally
+A Django e-commerce storefront for archival wall-art posters, with a full custom admin panel.
 
-### macOS / Linux (bash)
+---
 
-    python -m venv venv && source venv/bin/activate
-    pip install -r requirements.txt
-    python manage.py makemigrations shop
-    python manage.py migrate
-    python manage.py seed          # sample posters + admin / admin123
-    python manage.py runserver     # http://127.0.0.1:8000  (admin: /admin/)
+## Feature Overview
 
-### Windows (cmd)
+| Module | What's included |
+|---|---|
+| **Storefront** | Home with search/filter/sort, product detail, gallery wall preview, lighting simulator |
+| **Cart (Vault)** | Session-based cart, qty inc/dec/remove |
+| **Checkout** | Shipping form, COD / Online payment, **coupon code apply**, order confirmation |
+| **Orders** | Order history, cancel in-progress orders |
+| **Wishlist** | Add/remove per-poster; dedicated wishlist page |
+| **Profile** | Saved addresses, order stats, available coupons |
+| **Reviews** | Leave a review after purchasing; star rating |
+| **Custom Dashboard** (`/manage/`) | Analytics, orders, poster CRUD, categories, coupons, users, reviews |
+| **Django Admin** (`/admin/`) | Full model-level admin with inline order items |
 
-    py -3.10 -m venv venv
-    venv\Scripts\activate
-    pip install -r requirements.txt
-    python manage.py makemigrations shop
-    python manage.py migrate
-    python manage.py seed
-    python manage.py runserver
+---
 
-### Windows (PowerShell)
+## Run locally (SQLite — zero config)
 
-    py -3.10 -m venv venv
-    venv\Scripts\Activate.ps1
-    pip install -r requirements.txt
-    python manage.py makemigrations shop
-    python manage.py migrate
-    python manage.py seed
-    python manage.py runserver
+### Windows — PowerShell
 
-> **Note for Windows:** `source` is a bash command and does not work in cmd
-> (use `venv\Scripts\activate` instead). If plain `python` points at an MSYS2 /
-> MSYS or mingw build, PyPI wheels for Pillow may be unavailable and
-> `pip install` will fail — create the venv with `py -3.10` (or another standard
-> Windows Python) as shown above, or skip activation entirely and run
-> `venv\Scripts\python manage.py ...`.
+```powershell
+py -3.10 -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed          # creates 12 sample posters + admin / admin123
+python manage.py runserver     # http://127.0.0.1:8000
+```
+
+### Windows — Command Prompt
+
+```cmd
+py -3.10 -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed
+python manage.py runserver
+```
+
+### macOS / Linux
+
+```bash
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py seed
+python manage.py runserver
+```
+
+> **Windows note:** `source` is bash-only. Use `venv\Scripts\activate` (cmd) or `venv\Scripts\Activate.ps1` (PowerShell).
+
+---
+
+## Default credentials (after `seed`)
+
+| Role | Username | Password | Access |
+|---|---|---|---|
+| Superuser | `admin` | `admin123` | Everything |
+
+---
+
+## URL map
+
+| URL | Description |
+|---|---|
+| `/` | Storefront / home |
+| `/poster/<id>/` | Product detail + reviews |
+| `/cart/` | Vault (cart) |
+| `/checkout/` | Checkout with coupon |
+| `/orders/` | My orders |
+| `/wishlist/` | My wishlist |
+| `/profile/` | Account profile |
+| `/accounts/login/` | Sign in |
+| `/register/` | Register |
+| `/manage/dashboard/` | **Custom analytics dashboard** |
+| `/manage/orders/` | Staff order management |
+| `/manage/posters/` | Poster CRUD |
+| `/manage/categories/` | Category CRUD |
+| `/manage/coupons/` | Coupon management |
+| `/manage/users/` | User management (superuser only) |
+| `/manage/reviews/` | Review moderation |
+| `/admin/` | Django built-in admin |
+
+---
+
+## Coupon codes (seeded)
+
+| Code | Type | Value | Min order |
+|---|---|---|---|
+| `WELCOME15` | % off | 15% | none |
+| `STUDIO50` | flat INR | ₹500 off | ₹2,500 |
+| `FESTIVE25` | % off | 25% | ₹1,500 |
+
+---
 
 ## PostgreSQL
 
-The `psycopg2-binary` driver is already in `requirements.txt`. Create a database,
-then set `DB_ENGINE=postgres` (and the connection vars) before migrate/seed/runserver:
+The `psycopg2-binary` driver is in `requirements.txt`. Create a database, then set `DB_ENGINE=postgres`:
 
-    createdb posterhub        # or: CREATE DATABASE posterhub;
-    export DB_ENGINE=postgres
-    export DB_NAME=posterhub DB_USER=postgres DB_PASSWORD=... DB_HOST=127.0.0.1 DB_PORT=5432
-    python manage.py migrate
-    python manage.py seed
-    python manage.py runserver
+```bash
+createdb posterhub
+export DB_ENGINE=postgres DB_NAME=posterhub DB_USER=postgres DB_PASSWORD=... DB_HOST=127.0.0.1 DB_PORT=5432
+python manage.py migrate
+python manage.py seed
+python manage.py runserver
+```
+
+On Windows PowerShell: `$env:DB_ENGINE="postgres"` etc.
 
 | Variable | Default | Notes |
-| --- | --- | --- |
-| `DB_ENGINE` | *(sqlite)* | Set to `postgres` to use PostgreSQL |
+|---|---|---|
+| `DB_ENGINE` | *(sqlite)* | `postgres` or `mysql` |
 | `DB_NAME` | `posterhub` | Database name |
 | `DB_USER` | `postgres` | Role |
 | `DB_PASSWORD` | *(empty)* | Role password |
 | `DB_HOST` | `127.0.0.1` | Server host |
 | `DB_PORT` | `5432` | Server port |
-| `DB_CONN_MAX_AGE` | `60` | Seconds to reuse a connection (0 = close each request) |
+| `DB_CONN_MAX_AGE` | `60` | Seconds to reuse a connection |
 
-On Windows, use `set DB_ENGINE=postgres` in cmd or `$env:DB_ENGINE="postgres"` in
-PowerShell instead of `export`.
+### Migrate existing SQLite data to PostgreSQL
 
-### Move existing data from SQLite
+```bash
+# 1. Dump from SQLite
+python manage.py dumpdata --natural-foreign --natural-primary \
+  -e contenttypes -e auth.Permission -e sessions > data.json
+# 2. Set DB_ENGINE=postgres, then:
+python manage.py migrate
+python manage.py loaddata data.json
+```
 
-Dump with the old (SQLite) settings, then load into PostgreSQL:
-
-    # 1. With the default SQLite settings
-    python manage.py dumpdata --natural-foreign --natural-primary \
-      -e contenttypes -e auth.Permission -e sessions > data.json
-    # 2. With DB_ENGINE=postgres set
-    python manage.py migrate
-    python manage.py loaddata data.json
+---
 
 ## MySQL
 
-Install mysqlclient, create a database, then set env vars before migrate:
+```
+DB_ENGINE=mysql DB_NAME=posterhub DB_USER=root DB_PASSWORD=... DB_HOST=127.0.0.1
+```
 
-    DB_ENGINE=mysql DB_NAME=posterhub DB_USER=root DB_PASSWORD=... DB_HOST=127.0.0.1
+Uncomment `mysqlclient` in `requirements.txt` before installing.
 
-## Not done yet (SRS items for the next pass)
+---
 
-Payment gateway, password-reset emails, offers/discounts, admin sales charts,
-product image upload UX, tests, production hardening (HTTPS, ALLOWED_HOSTS,
-SECRET_KEY).
+## Email
+
+In development, emails are printed to the console (`EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend`).
+For production set `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` env vars.
