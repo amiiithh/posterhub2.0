@@ -73,10 +73,10 @@
             </label>
           </div>
 
-          <button id="place-order-btn" type="submit"
+          <button id="place-order-btn" type="submit" name="action" value="place_order"
             class="w-full py-4 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all shadow-md flex items-center justify-center gap-3">
             <i class="fa-solid fa-bag-shopping"></i>
-            Place Order — ₹{{ total }}
+            Place Order — ₹{{ final_total }}
           </button>
 
           <p class="text-center text-xs text-stone-400 mt-3">
@@ -112,17 +112,51 @@
           {% endfor %}
         </div>
 
-        <div class="border-t border-stoneLine pt-4 space-y-2.5 text-sm mb-5">
+        <!-- Totals -->
+        <div class="border-t border-stoneLine pt-4 space-y-2.5 text-sm mb-3">
           <div class="flex justify-between text-stone-600"><span>Subtotal</span><span>₹{{ total }}</span></div>
+          {% if coupon %}
+          <div class="flex justify-between text-emerald-600 font-semibold">
+            <span class="flex items-center gap-1"><i class="fa-solid fa-tag text-xs"></i> {{ coupon.code }}</span>
+            <span>−₹{{ discount }}</span>
+          </div>
+          {% endif %}
           <div class="flex justify-between text-stone-600"><span>Shipping</span><span class="text-emerald-600 font-semibold">Free</span></div>
-          <div class="flex justify-between text-stone-600"><span>Nano tabs & tube</span><span class="text-emerald-600 font-semibold">Included</span></div>
+          <div class="flex justify-between text-stone-600"><span>Nano tabs &amp; tube</span><span class="text-emerald-600 font-semibold">Included</span></div>
         </div>
-        <div class="border-t border-stoneLine pt-4">
-          <div class="flex justify-between font-display font-extrabold text-lg text-noir"><span>Total</span><span>₹{{ total }}</span></div>
+        <div class="border-t border-stoneLine pt-3 mb-5">
+          <div class="flex justify-between font-display font-extrabold text-lg text-noir"><span>Total</span><span>₹{{ final_total }}</span></div>
+        </div>
+
+        <!-- Coupon code field -->
+        <div class="mb-5">
+          {% if coupon %}
+          <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded px-3 py-2 text-xs">
+            <span class="text-emerald-700 font-semibold">
+              <i class="fa-solid fa-circle-check mr-1"></i>{{ coupon.code }} — {{ coupon.display }} applied
+            </span>
+            <form method="post" style="margin:0">
+              {% csrf_token %}
+              <button type="submit" name="action" value="remove_coupon"
+                class="text-red-400 hover:text-red-600 font-bold ml-2 transition-colors" title="Remove coupon">✕</button>
+            </form>
+          </div>
+          {% else %}
+          <form method="post" class="flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="coupon_code" placeholder="Coupon code" maxlength="20"
+              class="flex-1 px-3 py-2 bg-galleryWhite border border-stoneLine rounded text-xs text-noir placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-noir"
+              style="text-transform:uppercase">
+            <button type="submit" name="action" value="apply_coupon"
+              class="px-3 py-2 bg-noir text-white text-[11px] font-bold uppercase tracking-wider rounded hover:bg-stone-800 transition-colors whitespace-nowrap">
+              Apply
+            </button>
+          </form>
+          {% endif %}
         </div>
 
         <!-- Trust signals -->
-        <div class="mt-6 pt-5 border-t border-stoneLine grid grid-cols-3 gap-3 text-center">
+        <div class="pt-4 border-t border-stoneLine grid grid-cols-3 gap-3 text-center">
           <div class="text-[10px] text-stone-400"><i class="fa-solid fa-lock text-champagneMuted text-base block mb-1"></i>Secure</div>
           <div class="text-[10px] text-stone-400"><i class="fa-solid fa-shield-halved text-champagneMuted text-base block mb-1"></i>Protected</div>
           <div class="text-[10px] text-stone-400"><i class="fa-solid fa-rotate-left text-champagneMuted text-base block mb-1"></i>Easy Returns</div>

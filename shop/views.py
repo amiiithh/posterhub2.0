@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.core.mail import send_mail
@@ -12,7 +12,7 @@ from .models import *
 
 def home(request):
     q, cat, sort = request.GET.get("q", ""), request.GET.get("cat", ""), request.GET.get("sort", "")
-    ps = Poster.objects.annotate(avg=Avg("reviews__rating"))
+    ps = Poster.objects.filter(is_active=True).annotate(avg=Avg("reviews__rating"))
     if q: ps = ps.filter(Q(title__icontains=q) | Q(artist__icontains=q) | Q(description__icontains=q))
     if cat: ps = ps.filter(category__slug=cat)
     ps = ps.order_by({"lo": "base_price", "hi": "-base_price"}.get(sort, "-created"))
@@ -55,13 +55,15 @@ def detail(request, pk):
         ("Sizes", "A4 · A3 · A2"),
         ("Category", str(p.category)),
     ]
+    avg_val = p.reviews.filter(is_approved=True).aggregate(a=Avg("rating"))["a"]
     return render(request, "detail.html", {
         "p": p,
         "sizes": [(s, p.price(s)) for s in SIZES],
         "can_review": can_review,
         "wished": wished,
-        "reviews": p.reviews.select_related("user").order_by("-created"),
-        "avg": p.reviews.aggregate(a=Avg("rating"))["a"],
+        "reviews": p.reviews.filter(is_approved=True).select_related("user").order_by("-created"),
+        "avg": avg_val,
+        "avg_int": round(avg_val) if avg_val else 0,
         "specs": specs,
     })
 
@@ -95,20 +97,86 @@ def cart_update(request):
 def checkout(request):
     items, total = _cart(request)
     if not items: return redirect("cart")
-    if request.method == "POST":
-        o = Order.objects.create(user=request.user, name=request.POST["name"], address=request.POST["address"],
-            phone=request.POST["phone"], payment=request.POST["payment"], total=total)
+
+    # ── Coupon logic ─────────────────────────────────────────────────────────
+    coupon = None
+    discount = 0
+    coupon_msg = ""
+    coupon_code = request.session.get("coupon_code", "")
+
+    if request.method == "POST" and request.POST.get("action") == "apply_coupon":
+        code = request.POST.get("coupon_code", "").strip().upper()
+        try:
+            c = Coupon.objects.get(code=code)
+            if c.is_available():
+                disc = c.apply(total)
+                if total < c.min_total:
+                    messages.error(request, f"Minimum order of ₹{c.min_total} required for '{code}'.")
+                elif disc == 0:
+                    messages.error(request, f"Coupon '{code}' gives ₹0 discount on your cart.")
+                else:
+                    request.session["coupon_code"] = code
+                    messages.success(request, f"Coupon '{code}' applied — you save ₹{disc}!")
+            else:
+                messages.error(request, f"Coupon '{code}' is expired or unavailable.")
+        except Coupon.DoesNotExist:
+            messages.error(request, f"Coupon '{code}' not found.")
+        return redirect("checkout")
+
+    if request.method == "POST" and request.POST.get("action") == "remove_coupon":
+        request.session.pop("coupon_code", None)
+        messages.info(request, "Coupon removed.")
+        return redirect("checkout")
+
+    if coupon_code:
+        try:
+            coupon = Coupon.objects.get(code=coupon_code)
+            if coupon.is_available():
+                discount = coupon.apply(total)
+            else:
+                # coupon expired between apply and checkout — silently drop it
+                request.session.pop("coupon_code", None)
+                coupon = None
+                discount = 0
+        except Coupon.DoesNotExist:
+            request.session.pop("coupon_code", None)
+            coupon = None
+
+    final_total = max(0, total - discount)
+
+    if request.method == "POST" and request.POST.get("action") == "place_order":
+        o = Order.objects.create(
+            user=request.user,
+            name=request.POST["name"],
+            address=request.POST["address"],
+            phone=request.POST["phone"],
+            payment=request.POST["payment"],
+            total=final_total,
+            coupon_code=coupon.code if coupon else "",
+            discount_amount=discount,
+        )
         for i in items: OrderItem.objects.create(order=o, poster=i["poster"], size=i["size"], qty=i["qty"], price=i["price"])
+        if coupon:
+            coupon.times_used += 1
+            coupon.save(update_fields=["times_used"])
         request.session["cart"] = {}
+        request.session.pop("coupon_code", None)
         send_mail(
             f"PosterHub order #{o.pk} confirmed",
-            f"Thanks {o.name}! Your order of ₹{total} is being processed.",
+            f"Thanks {o.name}! Your order of ₹{final_total} is being processed.",
             settings.DEFAULT_FROM_EMAIL,
             [request.user.email or "noreply@posterhub.com"],
         )
         messages.success(request, f"Order #{o.pk} placed successfully!")
         return redirect("orders")
-    return render(request, "checkout.html", {"items": items, "total": total})
+
+    return render(request, "checkout.html", {
+        "items": items,
+        "total": total,
+        "coupon": coupon,
+        "discount": discount,
+        "final_total": final_total,
+    })
 
 @login_required
 def orders(request):
@@ -141,8 +209,23 @@ def wish_toggle(request, pk):
 def register(request):
     f = UserCreationForm(request.POST or None)
     if request.method == "POST" and f.is_valid():
-        login(request, f.save()); return redirect("home")
+        user = f.save()
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        return redirect("home")
     return render(request, "registration/register.html", {"form": f})
+
+
+@require_POST
+def cart_preserving_logout(request):
+    """Logout while keeping the cart and coupon in the new (anonymous) session."""
+    cart = request.session.get("cart", {})
+    coupon_code = request.session.get("coupon_code", "")
+    auth_logout(request)          # flushes session, creates a fresh one
+    if cart:
+        request.session["cart"] = cart
+    if coupon_code:
+        request.session["coupon_code"] = coupon_code
+    return redirect(settings.LOGOUT_REDIRECT_URL or "/")
 
 @login_required
 def profile(request):
