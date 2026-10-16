@@ -32,7 +32,7 @@
       <div class="flex items-center gap-2 mb-3">
         <span class="text-[11px] font-mono font-semibold uppercase tracking-widest text-champagneMuted">{{ p.category }}</span>
         {% if avg %}<span class="text-[11px] font-mono text-stone-400">•</span>
-        <span class="text-champagne text-sm">{% for i in "12345" %}{% if forloop.counter <= avg|floatformat:0|add:0 %}★{% else %}☆{% endif %}{% endfor %}</span>
+        <span class="text-champagne text-sm">{% for i in "12345" %}{% if forloop.counter <= avg_int %}★{% else %}☆{% endif %}{% endfor %}</span>
         <span class="text-[11px] text-stone-500">{{ avg|floatformat:1 }} / 5</span>{% endif %}
       </div>
       <h1 class="font-display font-extrabold text-3xl sm:text-4xl text-noir leading-tight mb-2">{{ p.title }}</h1>
@@ -69,15 +69,13 @@
       </form>
 
       {% if user.is_authenticated %}
-      <div class="flex gap-3 flex-wrap">
+      <div class="flex gap-3 flex-wrap mt-3">
         {# Binds to the sibling #wish-form below by id: an inner form tag here would be discarded by the browser, so the heart would submit the cart form instead. #}
         <button type="submit" form="wish-form" title="{% if wished %}Remove from wishlist{% else %}Save to wishlist{% endif %}" aria-label="{% if wished %}Remove from wishlist{% else %}Save to wishlist{% endif %}" class="px-4 py-3.5 border {% if wished %}border-champagne bg-champagne/10 text-champagne{% else %}border-stoneLine text-stone-500 hover:border-noir{% endif %} rounded-sm transition-all">
           <i class="fa-{% if wished %}solid{% else %}regular{% endif %} fa-heart"></i>
         </button>
       </div>
-
-
-      {% if user.is_authenticated %}{# Standalone wishlist toggle form — must stay outside the cart form above. #}
+      {# Standalone wishlist toggle form — must stay outside the cart form above. #}
       <form id="wish-form" method="post" action="{% url 'wish_toggle' p.pk %}">{% csrf_token %}</form>
       {% endif %}
 
