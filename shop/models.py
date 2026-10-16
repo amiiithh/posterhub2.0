@@ -42,6 +42,14 @@ class Poster(models.Model):
     def price(self, size):
         return round(self.base_price * SIZES[size])
 
+    @property
+    def price_a3(self):
+        return self.price("A3")
+
+    @property
+    def price_a2(self):
+        return self.price("A2")
+
     def __str__(self):
         return self.title
 
