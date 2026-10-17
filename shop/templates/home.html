@@ -31,6 +31,38 @@
   /* Size pill toggle */
   .size-pill { padding:.25rem .75rem;border:1px solid #E7E5E0;border-radius:999px;font-size:.7rem;font-family:monospace;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s; }
   .size-pill.active,.size-pill:hover { border-color:#111;background:#111;color:#fff; }
+
+  /* 3D Perspective Stage Container */
+    .perspective-stage {
+      perspective: 1200px;
+      perspective-origin: 50% 48%;
+      transform-style: preserve-3d;
+    }
+
+    /* 3D Card Positioning with Smooth Spring Motion */
+    .deck-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transition: transform 0.4s cubic-bezier(0.2, 0.85, 0.25, 1), 
+                  opacity 0.45s ease, 
+                  filter 0.45s ease,
+                  box-shadow 0.5s ease;
+      will-change: transform, opacity;
+      transform-style: preserve-3d;
+      user-select: none;
+    }
+
+    
+  .gallery-shadow-focal {
+      box-shadow:
+        0 10px 25px -5px rgba(17, 17, 17, 0.15),
+        0 25px 60px -12px rgba(17, 17, 17, 0.28),
+        0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+  #deck-stage { touch-action: pan-y; }
+  .deck-card:not(.is-active):hover { filter: brightness(1.04) !important; }
+  .deck-card:not(.is-active) { cursor: pointer; }
 </style>
 {% endblock %}
 
@@ -56,54 +88,73 @@
       </div>
     </div>
 
-    <!-- Gallery Wall Preview -->
-    <div class="gallery-wall max-w-5xl mx-auto" id="gallery-wall">
-      <div class="ambient" id="wall-ambient"></div>
-      <!-- Lighting toggle -->
-      <div class="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 pb-4 border-b border-stoneLine/70">
-        <div class="flex items-center gap-2.5">
-          <div class="w-2.5 h-2.5 rounded-full bg-champagne animate-pulse"></div>
-          <span class="text-xs font-mono uppercase tracking-widest font-bold text-stone-700">Room Lighting Simulation:</span>
-          <span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-galleryWhite border border-stoneLine text-stone-600 shadow-xs" id="lighting-pill">5500K Clean Daylight</span>
-        </div>
-        <div class="inline-flex items-center p-1 bg-galleryWhite/90 border border-stoneLine/90 rounded-full shadow-sm text-xs gap-1">
-          <button data-mode="daylight" data-label="5500K Clean Daylight" class="lighting-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-noir text-white text-xs">
-            <i class="fa-regular fa-sun"></i> Daylight <span class="text-[9px] opacity-70 pl-1 border-l border-white/20">5500K</span>
-          </button>
-          <button data-mode="warm" data-label="2700K Warm Filament Glow" class="lighting-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-stone-600 hover:text-noir text-xs">
-            <i class="fa-solid fa-lightbulb text-amber-500"></i> Warm Lamp <span class="text-[9px] text-stone-400 pl-1 border-l border-stoneLine">2700K</span>
-          </button>
-          <button data-mode="studio" data-label="Gallery Spotlight (CRI 98)" class="lighting-btn hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-stone-600 hover:text-noir text-xs">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Studio <span class="text-[9px] text-stone-400 pl-1 border-l border-stoneLine">CRI 98</span>
-          </button>
-        </div>
-      </div>
-      <!-- Poster grid in wall -->
-      <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5 items-end">
-        {% for p in posters|slice:":4" %}
-        <a href="{% url 'detail' p.pk %}" class="poster-card bg-galleryWhite print-border gallery-shadow-elevated {% cycle 'col-span-2 transform -rotate-1 hover:rotate-0 hover:-translate-y-2' 'transform rotate-1 hover:rotate-0 hover:-translate-y-2' 'transform -rotate-2 hover:rotate-0 hover:-translate-y-2' 'col-span-2 transform rotate-2 hover:rotate-0 hover:-translate-y-2' %} transition-all duration-300 block">
-          {% if forloop.counter == 1 or forloop.counter == 4 %}<div class="washi-tape-top"></div>{% else %}<div class="washi-tape-corner-{% if forloop.counter == 2 %}left{% else %}right{% endif %}"></div>{% endif %}
-          <div class="aspect-[3/4] overflow-hidden relative group bg-stone-100">
-            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"/>
-            {% else %}<div class="w-full h-full flex items-end p-3" style="background:linear-gradient(135deg,#e5e5e5,#d4d4d4)">
-              <div><p class="text-xs font-bold text-stone-700 leading-tight">{{ p.title }}</p><p class="text-[10px] text-stone-500">{{ p.category }}</p></div>
-            </div>{% endif %}
-            <div class="absolute bottom-2 left-2 bg-noir/80 backdrop-blur-xs text-white text-[9px] uppercase tracking-widest px-2 py-0.5 font-mono">{{ p.category }} • ₹{{ p.base_price }}</div>
-          </div>
-        </a>
-        {% endfor %}
-      </div>
-      <!-- Wall footer -->
-      <div class="relative z-10 mt-6 pt-4 border-t border-stoneLine/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-3 text-stone-600">
-          <div class="w-7 h-7 rounded-full bg-champagne/15 text-champagneMuted flex items-center justify-center"><i class="fa-solid fa-tape text-xs"></i></div>
-          <span><strong>16x Damage-Free Nano-Adhesive Tabs</strong> included with every order.</span>
-        </div>
-        <div class="hidden sm:flex items-center gap-4 text-stone-500 font-mono text-[11px]">
-          <span>ZERO NAIL HOLES</span><span>300 GSM VELVET MATTE</span>
-        </div>
-      </div>
-    </div>
+    <!-- Cover-flow deck -->
+{% if posters %}{% with deck=posters|slice:":10" %}
+<div class="relative bg-[#F8F6F0] rounded-xl border border-stoneLine/90 gallery-shadow-elevated p-4 sm:p-8 lg:p-10 overflow-hidden select-none" id="deck-wrapper-container">
+<!-- Architectural Datum & Wall Ruler Guides -->
+<div class="absolute top-3 left-4 text-[10px] font-mono text-stone-400 flex items-center gap-2 pointer-events-none">
+<span class="w-2 h-2 rounded-full bg-champagne"></span>
+<span class="">STUDIO DECK AXIS: 3D ROTATION • 28° DEPTH FAN</span>
+</div>
+<div class="absolute top-3 right-4 text-[10px] font-mono text-stone-400 flex items-center gap-2">
+<!-- Play/Pause Toggle Pill -->
+<button class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-galleryWhite border border-stoneLine text-stone-700 hover:text-noir hover:border-stone-400 transition-all font-mono text-[9px] shadow-2xs font-semibold cursor-pointer pointer-events-auto" id="auto-cycle-toggle-btn" title="Toggle 3D auto rotation">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" id="auto-cycle-led"></span>
+<span class="" id="auto-cycle-status-label">AUTO-CYCLE: ON</span>
+<i class="fa-solid fa-pause text-[8px] text-stone-400 ml-0.5" id="auto-cycle-icon"></i>
+</button>
+<span class="px-1.5 py-0.5 bg-galleryWhite border border-stoneLine rounded text-[9px] shadow-2xs font-semibold hidden sm:inline-block pointer-events-none">← / → ARROW KEYS ENABLED</span>
+</div>
+<!-- 3D Canvas Stage -->
+<div class="relative w-full h-[380px] sm:h-[450px] md:h-[480px] flex items-center justify-center perspective-stage my-2" id="deck-stage">
+{% for p in deck %}
+<div class="deck-card cursor-pointer w-[210px] sm:w-[250px] md:w-[280px] gallery-shadow-elevated" data-card-idx="{{ forloop.counter0 }}" data-pid="{{ p.pk }}" data-url="{% url 'detail' p.pk %}" data-format="A4 PRINT • 300 GSM FUJI VELVET MATTE" data-title="{{ p.title|upper }}" data-tag="{{ p.category|upper }} • {{ p.artist|upper }}" data-price="₹{{ p.base_price }}" data-a4="{{ p.base_price }}" data-a3="{{ p.price_a3 }}" data-a2="{{ p.price_a2 }}" data-oldprice="">
+<div class="relative bg-galleryWhite p-2.5 print-border rounded-sm transition-all duration-300">
+<div class="washi-tape-top"></div>
+<div class="aspect-[3/4] bg-stone-100 overflow-hidden relative">
+{% if p.image %}<img alt="{{ p.title }}" class="w-full h-full object-cover" src="{{ p.image.url }}" draggable="false">{% else %}<div class="w-full h-full" style="background:hsl({{ p.hue }} 25% 80%)"></div>{% endif %}
+<span class="absolute top-2 right-2 bg-noir text-white text-[9px] font-mono px-1.5 py-0.5 rounded-xs">{{ p.category }}</span>
+</div>
+<div class="mt-2.5 flex items-center justify-between text-xs"><p class="font-display font-bold text-xs text-noir truncate">{{ p.title }}</p><span class="font-mono text-[10px] font-bold text-champagneMuted">₹{{ p.base_price }}</span></div>
+</div></div>
+{% endfor %}
+<!-- Sleek Circular Deck Navigation Buttons -->
+<button aria-label="Previous Print" class="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-galleryWhite/90 backdrop-blur-md border border-stoneLine text-noir hover:bg-noir hover:text-white shadow-md flex items-center justify-center transition-all z-40 group cursor-pointer" id="deck-prev-btn">
+<i class="fa-solid fa-arrow-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+</button>
+<button aria-label="Next Print" class="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-galleryWhite/90 backdrop-blur-md border border-stoneLine text-noir hover:bg-noir hover:text-white shadow-md flex items-center justify-center transition-all z-40 group cursor-pointer" id="deck-next-btn">
+<i class="fa-solid fa-arrow-right text-xs group-hover:translate-x-0.5 transition-transform"></i>
+</button>
+</div>
+<!-- Scrubbable Range Tracker, Progress Bar & Thumbnail Dot Indicators -->
+<div class="max-w-md mx-auto mt-2 flex flex-col items-center gap-2">
+<div class="flex items-center justify-center gap-1.5" id="deck-pill-indicators"><button aria-label="Go to print 1" class="w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300" data-idx="0"></button><button aria-label="Go to print 2" class="w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300" data-idx="1"></button><button aria-label="Go to print 3" class="w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300" data-idx="2"></button><button aria-label="Go to print 4" class="w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300" data-idx="3"></button><button aria-label="Go to print 5" class="w-8 h-1.5 rounded-full bg-noir transition-all duration-300" data-idx="4"></button><button aria-label="Go to print 6" class="w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300" data-idx="5"></button><button aria-label="Go to print 7" class="w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300" data-idx="6"></button></div>
+</div>
+<!-- Wall Dimension Bottom Bar -->
+<div class="mt-4 pt-3 border-t border-stoneLine/60 flex items-center justify-between text-[11px] font-mono text-stone-400">
+<div class="flex items-center gap-2">
+<i class="fa-solid fa-layer-group text-champagne"></i>
+<span class="hidden sm:inline">COVER FLOW: 7 ARCHIVAL MASTER PRINTS IN FOCUS ROTATION</span>
+<span class="sm:hidden">7 PRINTS IN ROTATION</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-noir font-semibold" id="deck-counter-label">PRINT 05 / 07 • DRAG OR CLICK TO CYCLE DECK</span>
+</div>
+</div>
+</div>
+<div class="mt-6 bg-galleryWhite p-4 sm:p-5 rounded-lg border border-stoneLine gallery-shadow-flat flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5" id="deck-placard">
+<div class="flex items-center gap-4"><div class="w-12 h-12 rounded-full bg-champagne/15 flex items-center justify-center shrink-0"><i class="fa-solid fa-crown text-champagne"></i></div>
+<div><div class="flex flex-wrap items-center gap-2"><span class="font-display font-extrabold text-base sm:text-lg text-noir tracking-tight" id="placard-title"></span><span class="px-2 py-0.5 bg-stone-100 text-stone-700 text-[10px] font-mono font-bold rounded" id="placard-tag"></span></div>
+<p class="text-xs text-stone-500 mt-1 font-mono flex items-center gap-1.5" id="placard-format"></p>
+<a id="placard-link" href="#" class="text-xs underline underline-offset-4 text-stone-600 hover:text-noir">View details</a></div></div>
+<form method="post" action="{% url 'cart_add' %}" class="flex flex-wrap items-center gap-4 sm:gap-6 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 pt-3 lg:pt-0 border-stoneLine/60">
+{% csrf_token %}<input type="hidden" name="poster" id="placard-pid"><input type="hidden" name="size" id="placard-size" value="A4">
+<div class="text-left lg:text-right"><span class="hidden" id="placard-oldprice"></span><p class="font-display font-extrabold text-2xl text-noir leading-none" id="placard-price"></p></div>
+<div class="flex items-center gap-2"><div class="flex items-center border border-stoneLine rounded bg-plaster/50 p-1 text-[11px] font-mono">
+<button type="button" class="deck-size px-2 py-1 rounded bg-white text-noir font-bold" data-size="A4">A4</button><button type="button" class="deck-size px-2 py-1 rounded text-stone-500 hover:text-noir" data-size="A3">A3</button><button type="button" class="deck-size px-2 py-1 rounded text-stone-500 hover:text-noir" data-size="A2">A2</button></div>
+<button type="submit" class="px-5 py-3 bg-noir text-alabaster text-xs uppercase tracking-widest font-bold rounded-sm shadow-md hover:bg-stone-800 transition-all flex items-center gap-2" id="placard-vault-btn"><i class="fa-solid fa-bag-shopping text-champagne"></i><span id="placard-vault-text">Add to cart</span></button></div>
+</form></div>
+{% endwith %}{% endif %}
   </div>
 </section>
 
@@ -232,20 +283,390 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-  // Lighting switcher
-  const wall = document.getElementById('gallery-wall');
-  const pill = document.getElementById('lighting-pill');
-  document.querySelectorAll('.lighting-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      document.querySelectorAll('.lighting-btn').forEach(b=>{
-        b.classList.remove('bg-noir','text-white');b.classList.add('text-stone-600');
+{% if posters %}<script>
+  (function() {
+    let currentIndex = 0;
+    const cards = Array.from(document.querySelectorAll('.deck-card'));
+    const totalCards = cards.length;
+    currentIndex = Math.min(Math.floor(totalCards / 2), totalCards - 1);
+    const prevBtn = document.getElementById('deck-prev-btn');
+    const nextBtn = document.getElementById('deck-next-btn');
+    const rangeScrubber = document.getElementById('deck-range-scrubber');
+    const pillContainer = document.getElementById('deck-pill-indicators');
+    const counterLabel = document.getElementById('deck-counter-label');
+    const categoryBtns = document.querySelectorAll('.deck-category-btn');
+    const deckStage = document.getElementById('deck-stage');
+    const deckContainer = document.getElementById('deck-wrapper-container');
+
+    // Auto-Cycle and Progress Elements
+    const autoCycleToggleBtn = document.getElementById('auto-cycle-toggle-btn');
+    const autoCycleLed = document.getElementById('auto-cycle-led');
+    const autoCycleLabel = document.getElementById('auto-cycle-status-label');
+    const autoCycleIcon = document.getElementById('auto-cycle-icon');
+    const progressFill = document.getElementById('auto-progress-fill');
+    const timerLabel = document.getElementById('auto-timer-label');
+    const pulseDot = document.getElementById('auto-pulse-dot');
+
+    // Placard Elements
+    const placardTitle = document.getElementById('placard-title');
+    const placardFormat = document.getElementById('placard-format');
+    const placardTag = document.getElementById('placard-tag');
+    const placardPrice = document.getElementById('placard-price');
+    const placardOldPrice = document.getElementById('placard-oldprice');
+    const placardVaultText = document.getElementById('placard-vault-text');
+
+    // Auto-advance Configuration
+    const CYCLE_DURATION_MS = 7000; // 7 seconds
+    const TICK_INTERVAL_MS = 60;
+    let isAutoCycleEnabled = true;
+    let isHoverPaused = false;
+    let elapsedMs = 0;
+    let timerInterval = null;
+
+    // Create Thumbnail Pills
+    if (pillContainer) {
+      pillContainer.innerHTML = '';
+      cards.forEach((card, idx) => {
+        const pill = document.createElement('button');
+        pill.setAttribute('aria-label', 'Go to print ' + (idx + 1));
+        pill.className = 'w-6 h-1.5 rounded-full transition-all duration-300 ' + (idx === currentIndex ? 'bg-noir w-8' : 'bg-stone-300 hover:bg-stone-400');
+        pill.dataset.idx = idx;
+        pill.addEventListener('click', () => {
+          updateDeck(idx);
+          resetAutoCycleTimer();
+        });
+        pillContainer.appendChild(pill);
       });
-      btn.classList.add('bg-noir','text-white');btn.classList.remove('text-stone-600');
-      wall.className='gallery-wall '+btn.dataset.mode;
-      if(pill)pill.textContent=btn.dataset.label;
+    }
+
+    // 3D Transform Algorithm for Fan-out Cover Flow
+    function updateDeck(newIndex) {
+      // Loop or constrain
+      if (newIndex < 0) newIndex = totalCards - 1;
+      if (newIndex >= totalCards) newIndex = 0;
+      currentIndex = newIndex;
+
+      const isMobile = window.innerWidth < 640;
+      const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
+      
+      const xSpacing = isMobile ? 85 : (isTablet ? 130 : 175);
+      const rotationAngle = 28; // Degree depth fan
+
+      cards.forEach((card, idx) => {
+        const offset = idx - currentIndex;
+        card.classList.toggle('is-active', offset === 0);
+        let transX = offset * xSpacing;
+        let transZ = -Math.abs(offset) * 90;
+        let rotateY = 0;
+        let scale = 1;
+        let opacity = 1;
+        let zIndex = 30 - Math.abs(offset) * 5;
+        let pointerEvents = 'auto';
+
+        if (offset === 0) {
+          // Centered Active Card
+          transX = 0;
+          transZ = 60;
+          rotateY = 0;
+          scale = isMobile ? 1.05 : 1.15;
+          opacity = 1;
+          zIndex = 40;
+          card.classList.add('gallery-shadow-focal');
+          card.classList.remove('gallery-shadow-elevated', 'gallery-shadow-flat');
+          card.style.filter = 'brightness(1)';
+        } else if (offset < 0) {
+          // Left cards
+          rotateY = rotationAngle;
+          transX = offset * xSpacing - 15;
+          scale = Math.max(0.72, 1 - Math.abs(offset) * 0.12);
+          opacity = Math.max(0.2, 1 - Math.abs(offset) * 0.28);
+          card.classList.remove('gallery-shadow-focal');
+          card.classList.add('gallery-shadow-elevated');
+          card.style.filter = 'brightness(0.92)';
+        } else {
+          // Right cards
+          rotateY = -rotationAngle;
+          transX = offset * xSpacing + 15;
+          scale = Math.max(0.72, 1 - Math.abs(offset) * 0.12);
+          opacity = Math.max(0.2, 1 - Math.abs(offset) * 0.28);
+          card.classList.remove('gallery-shadow-focal');
+          card.classList.add('gallery-shadow-elevated');
+          card.style.filter = 'brightness(0.92)';
+        }
+
+        // Offscreen occlusion
+        if (Math.abs(offset) > 3) {
+          opacity = 0;
+          pointerEvents = 'none';
+        }
+
+        card.style.transform = `translate(-50%, -50%) translateX(${transX}px) translateZ(${transZ}px) rotateY(${rotateY}deg) scale(${scale})`;
+        card.style.zIndex = zIndex;
+        card.style.opacity = opacity;
+        card.style.pointerEvents = pointerEvents;
+      });
+
+      // Update Range Scrubber
+      if (rangeScrubber) {
+        rangeScrubber.value = currentIndex;
+      }
+
+      // Update Pill Indicators
+      if (pillContainer) {
+        const pills = pillContainer.querySelectorAll('button');
+        pills.forEach((p, idx) => {
+          if (idx === currentIndex) {
+            p.className = 'w-8 h-1.5 rounded-full bg-noir transition-all duration-300';
+          } else {
+            p.className = 'w-6 h-1.5 rounded-full bg-stone-300 hover:bg-stone-400 transition-all duration-300';
+          }
+        });
+      }
+
+      // Update Deck Counter
+      if (counterLabel) {
+        counterLabel.textContent = `PRINT 0${currentIndex + 1} / 0${totalCards} • DRAG OR CLICK TO CYCLE DECK`;
+      }
+
+      // Update Placard Spotlight Details
+      const activeCard = cards[currentIndex];
+      if (activeCard) {
+        window.__deckCard = activeCard;
+        var _pid = document.getElementById('placard-pid'); if (_pid) _pid.value = activeCard.dataset.pid;
+        var _sz = document.getElementById('placard-size'); if (_sz) _sz.value = 'A4';
+        var _lk = document.getElementById('placard-link'); if (_lk) _lk.href = activeCard.dataset.url;
+        document.querySelectorAll('.deck-size').forEach(function (b) { var on = b.dataset.size === 'A4'; b.classList.toggle('bg-white', on); b.classList.toggle('text-noir', on); b.classList.toggle('font-bold', on); b.classList.toggle('text-stone-500', !on); });
+        if (placardTitle) placardTitle.textContent = activeCard.dataset.title || 'ARCHIVAL SOLO PRINT';
+        if (placardTag) placardTag.textContent = activeCard.dataset.tag || 'ARCHIVAL';
+        if (placardFormat) {
+          placardFormat.innerHTML = `<i class="fa-solid fa-ruler-combined text-stone-400 text-[11px]"></i><span>${activeCard.dataset.format || ''}</span>`;
+        }
+        if (placardPrice) placardPrice.textContent = activeCard.dataset.price || '₹499';
+        if (placardOldPrice) placardOldPrice.textContent = '';
+        if (placardVaultText) {
+          placardVaultText.textContent = `Add to cart (${activeCard.dataset.price})`;
+        }
+      }
+
+      // Update Category buttons active style
+      categoryBtns.forEach((btn) => {
+        const target = parseInt(btn.dataset.targetIdx, 10);
+        if (target === currentIndex) {
+          btn.classList.add('bg-noir', 'text-white', 'border-noir');
+          btn.classList.remove('bg-galleryWhite', 'text-charcoal', 'border-stoneLine');
+        } else {
+          btn.classList.remove('bg-noir', 'text-white', 'border-noir');
+          btn.classList.add('bg-galleryWhite', 'text-charcoal', 'border-stoneLine');
+        }
+      });
+    }
+
+    // Direct Card Click Focus
+    cards.forEach((card, idx) => {
+      card.addEventListener('click', () => {
+        if (currentIndex !== idx) {
+          updateDeck(idx);
+          resetAutoCycleTimer();
+        } else if (card.dataset.url) {
+          window.location.href = card.dataset.url;
+        }
+      });
+    });
+
+    // Arrow Buttons
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        updateDeck(currentIndex - 1);
+        resetAutoCycleTimer();
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        updateDeck(currentIndex + 1);
+        resetAutoCycleTimer();
+      });
+    }
+
+    // Scrubber Input
+    if (rangeScrubber) {
+      rangeScrubber.addEventListener('input', (e) => {
+        updateDeck(parseInt(e.target.value, 10));
+        resetAutoCycleTimer();
+      });
+    }
+
+    // Category Button Quick Jumps
+    categoryBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = parseInt(btn.dataset.targetIdx, 10);
+        if (!isNaN(target)) {
+          updateDeck(target);
+          resetAutoCycleTimer();
+        }
+      });
+    });
+
+    // Keyboard Arrow Navigation
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        const stage = document.getElementById('deck-stage');
+        if (stage) {
+          const rect = stage.getBoundingClientRect();
+          // Active when near viewport
+          if (rect.top < window.innerHeight && rect.bottom > 0) {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              updateDeck(currentIndex - 1);
+              resetAutoCycleTimer();
+            } else if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              updateDeck(currentIndex + 1);
+              resetAutoCycleTimer();
+            }
+          }
+        }
+      }
+    });
+
+    // Intelligent Auto-Cycle Timer System
+    function resetAutoCycleTimer() {
+      elapsedMs = 0;
+      updateProgressBar();
+    }
+
+    function updateProgressBar() {
+      if (!progressFill) return;
+      if (!isAutoCycleEnabled || isHoverPaused) {
+        if (pulseDot) pulseDot.classList.remove('animate-ping');
+        return;
+      }
+      if (pulseDot) pulseDot.classList.add('animate-ping');
+      const ratio = Math.min(1, elapsedMs / CYCLE_DURATION_MS);
+      progressFill.style.width = (ratio * 100).toFixed(1) + '%';
+      if (timerLabel) {
+        const remaining = Math.max(0, (CYCLE_DURATION_MS - elapsedMs) / 1000).toFixed(1);
+        timerLabel.textContent = `${remaining}s`;
+      }
+    }
+
+    function stepTimer() {
+      if (!isAutoCycleEnabled || isHoverPaused) return;
+
+      elapsedMs += TICK_INTERVAL_MS;
+      if (elapsedMs >= CYCLE_DURATION_MS) {
+        elapsedMs = 0;
+        // Seamlessly cycle to next print (loops back after print 7 to print 1)
+        updateDeck(currentIndex + 1);
+      }
+      updateProgressBar();
+    }
+
+    function startAutoCycle() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(stepTimer, TICK_INTERVAL_MS);
+      renderToggleState();
+    }
+
+    function renderToggleState() {
+      if (!autoCycleToggleBtn) return;
+      if (isAutoCycleEnabled) {
+        if (autoCycleLed) {
+          autoCycleLed.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse';
+        }
+        if (autoCycleLabel) autoCycleLabel.textContent = isHoverPaused ? 'AUTO-CYCLE: PAUSED (POSTER HOVER)' : 'AUTO-CYCLE: ON';
+        if (autoCycleIcon) autoCycleIcon.className = 'fa-solid fa-pause text-[8px] text-stone-400 ml-0.5';
+        if (pulseDot) pulseDot.style.opacity = '1';
+      } else {
+        if (autoCycleLed) {
+          autoCycleLed.className = 'w-1.5 h-1.5 rounded-full bg-stone-300';
+        }
+        if (autoCycleLabel) autoCycleLabel.textContent = 'AUTO-CYCLE: OFF';
+        if (autoCycleIcon) autoCycleIcon.className = 'fa-solid fa-play text-[8px] text-stone-400 ml-0.5';
+        if (progressFill) progressFill.style.width = '0%';
+        if (timerLabel) timerLabel.textContent = 'OFF';
+        if (pulseDot) {
+          pulseDot.classList.remove('animate-ping');
+          pulseDot.style.opacity = '0.3';
+        }
+      }
+    }
+
+    // Toggle Button Click Handler
+    if (autoCycleToggleBtn) {
+      autoCycleToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isAutoCycleEnabled = !isAutoCycleEnabled;
+        if (isAutoCycleEnabled) {
+          elapsedMs = 0;
+        }
+        renderToggleState();
+      });
+    }
+
+    // Pause only while a mouse pointer is over a poster
+    cards.forEach((card) => {
+      card.addEventListener('pointerenter', (e) => {
+        if (e.pointerType !== 'mouse') return;
+        isHoverPaused = true;
+        renderToggleState();
+      });
+      card.addEventListener('pointerleave', (e) => {
+        if (e.pointerType !== 'mouse') return;
+        isHoverPaused = false;
+        renderToggleState();
+      });
+    });
+
+    // Handle Window Resize for Responsive 3D offsets
+    window.addEventListener('resize', () => {
+      updateDeck(currentIndex);
+    });
+
+    // Initialize 3D Stage on Load and begin intelligent auto-cycle
+    updateDeck(currentIndex);
+    startAutoCycle();
+  })();
+
+  document.querySelectorAll('.deck-size').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var card = window.__deckCard; if (!card) return;
+      var size = b.dataset.size, price = card.dataset[size.toLowerCase()];
+      document.getElementById('placard-size').value = size;
+      document.getElementById('placard-price').textContent = '\u20b9' + price;
+      document.getElementById('placard-vault-text').textContent = 'Add to cart (\u20b9' + price + ')';
+      document.querySelectorAll('.deck-size').forEach(function (x) { var on = x === b; x.classList.toggle('bg-white', on); x.classList.toggle('text-noir', on); x.classList.toggle('font-bold', on); x.classList.toggle('text-stone-500', !on); });
     });
   });
+
+  (function () {
+    var stage = document.getElementById('deck-stage'); if (!stage) return;
+    var prev = document.getElementById('deck-prev-btn'), next = document.getElementById('deck-next-btn');
+    var sx = null, moved = false, lock = 0;
+    function step(d) { var b = d > 0 ? next : prev; if (b) b.click(); }
+    stage.addEventListener('pointerdown', function (e) { if (e.target.closest('button')) return; sx = e.clientX; moved = false; });
+    stage.addEventListener('pointermove', function (e) { if (sx !== null && Math.abs(e.clientX - sx) > 12) moved = true; });
+    window.addEventListener('pointerup', function (e) {
+      if (sx === null) return;
+      var dx = e.clientX - sx; sx = null;
+      if (Math.abs(dx) > 45) step(dx < 0 ? 1 : -1);
+    });
+    stage.addEventListener('click', function (e) {
+      if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; return; }
+      if (!e.target.closest('.deck-card') && !e.target.closest('button')) {
+        var r = stage.getBoundingClientRect();
+        step(e.clientX < r.left + r.width / 2 ? -1 : 1);
+      }
+    }, true);
+    stage.addEventListener('wheel', function (e) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 8) {
+        e.preventDefault();
+        var n = Date.now();
+        if (n - lock > 350) { lock = n; step(e.deltaX > 0 ? 1 : -1); }
+      }
+    }, { passive: false });
+  })();
+</script>{% endif %}
+<script>
   // Size pill toggle + live price update + hidden size input
   document.querySelectorAll('.size-pill[data-size]').forEach(btn=>{
     btn.addEventListener('click',function(){
