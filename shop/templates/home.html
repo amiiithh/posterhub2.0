@@ -89,7 +89,7 @@
     </div>
 
     <!-- Cover-flow deck -->
-{% if posters %}{% with deck=posters|slice:":10" %}
+{% if posters %}{% with deck=posters|slice:":7" %}
 <div class="relative bg-[#F8F6F0] rounded-xl border border-stoneLine/90 gallery-shadow-elevated p-4 sm:p-8 lg:p-10 overflow-hidden select-none" id="deck-wrapper-container">
 <!-- Architectural Datum & Wall Ruler Guides -->
 <div class="absolute top-3 left-4 text-[10px] font-mono text-stone-400 flex items-center gap-2 pointer-events-none">
@@ -256,27 +256,46 @@
   </div>
 </section>
 
-<!-- Stats / Social proof -->
-<section class="py-16 bg-alabaster border-b border-stoneLine">
+<!-- Top reviews -->
+<section class="py-16 bg-alabaster border-b border-stoneLine" id="reviews">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-10">
+      {% if review_stats.n %}
       <div class="flex items-center justify-center gap-1 text-champagne mb-2 text-sm">
-        {% for i in "12345" %}<i class="fa-solid fa-star"></i>{% endfor %}
+        {% for on in review_stats.stars %}<i class="fa-solid fa-star {% if not on %}text-stone-300{% endif %}"></i>{% endfor %}
       </div>
-      <h2 class="text-3xl font-extrabold text-noir">43,000+ INDIAN WALLS TRANSFORMED</h2>
-      <p class="text-stone-500 text-xs sm:text-sm mt-1">Real feedback from architects, engineers, and creative studios across India.</p>
+      <h2 class="text-3xl font-extrabold text-noir">TOP REVIEWS FROM OUR COLLECTORS</h2>
+      <p class="text-stone-500 text-xs sm:text-sm mt-1">{{ review_stats.avg|floatformat:1 }} / 5 from {{ review_stats.n }} review{{ review_stats.n|pluralize }}. Like a review to help it rise.</p>
+      {% else %}
+      <h2 class="text-3xl font-extrabold text-noir">CUSTOMER REVIEWS</h2>
+      <p class="text-stone-500 text-xs sm:text-sm mt-1">No reviews yet. Buy a print and be the first to share your thoughts.</p>
+      {% endif %}
     </div>
+    {% if top_reviews %}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      {% for author,role,review in testimonials %}
+      {% for r in top_reviews %}
       <div class="lift-on-scroll bg-plaster/50 border border-stoneLine p-6 rounded-lg gallery-shadow-flat flex flex-col justify-between">
-        <p class="text-xs sm:text-sm text-charcoal leading-relaxed italic">"{{ review }}"</p>
-        <div class="mt-6 pt-4 border-t border-stoneLine flex items-center justify-between">
-          <div><p class="font-display font-bold text-xs text-noir">{{ author }}</p><span class="text-[10px] text-stone-400">{{ role }}</span></div>
-          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Verified Buyer</span>
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-champagne text-sm">{% for on in r.stars %}{% if on %}★{% else %}☆{% endif %}{% endfor %}</div>
+            {% if forloop.first and r.like_count %}<span class="text-[10px] font-mono text-champagneMuted bg-champagne/10 px-2 py-0.5 rounded">Most liked</span>{% endif %}
+          </div>
+          <p class="text-xs sm:text-sm text-charcoal leading-relaxed italic">&ldquo;{{ r.text|truncatewords:40 }}&rdquo;</p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-stoneLine flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-display font-bold text-xs text-noir truncate">{{ r.user.get_full_name|default:r.user.username }}</p>
+            <span class="text-[10px] text-stone-400">on <a href="{% url 'detail' r.poster_id %}" class="underline underline-offset-2 hover:text-noir">{{ r.poster.title }}</a>{% if r.user.profile.city %} &bull; {{ r.user.profile.city }}{% endif %}</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            {% if r.verified %}<span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Verified Buyer</span>{% endif %}
+            {% include "_review_like.html" with next_url="/#reviews" %}
+          </div>
         </div>
       </div>
       {% endfor %}
     </div>
+    {% endif %}
   </div>
 </section>
 

@@ -4,7 +4,7 @@ from django.contrib.auth import login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.core.mail import send_mail
-from django.db.models import Avg, Q
+from django.db.models import Avg, Count, Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -22,16 +22,26 @@ def home(request):
         ("fa-solid fa-hand-holding-hand", "Zero-Damage Nano Tabs", "Industrial micro-suction strips peel cleanly off delicate Indian wall putty without peeling paint."),
         ("fa-solid fa-box-archive", "Reinforced Tube Pack", "Double-wall rigid spiral cylinders with moisture barrier parchment for weather immunity."),
     ]
-    testimonials = [
-        ("Aditya S.", "Architect, Indiranagar, Bengaluru", "The velvet matte texture is phenomenal. There is zero glare under my high-CRI studio lights. The nano tabs peel cleanly without tearing paint off rented apartment walls."),
-        ("Kabir Mehra", "Creative Lead, Bandra West, Mumbai", "Got the 6-piece Porsche GT set. The 300 GSM paper has serious physical weight. It feels like museum collection prints rather than typical commercial glossy posters."),
-        ("Rhea Sen", "Interior Stylist, Vasant Kunj, New Delhi", "Dispatch was rapid and arrived in a super-rigid heavy tube. No bent corners or creases. The 'Buy 4 Get 3 Free' bundle deal gave me enough prints to furnish two entire rooms."),
-    ]
+    top_reviews = list(
+        Review.objects.filter(is_approved=True)
+        .select_related("poster", "user", "user__profile")
+        .annotate(
+            like_count=Count("likes", distinct=True),
+            verified=Exists(OrderItem.objects.filter(
+                poster=OuterRef("poster"), order__user=OuterRef("user")
+            ).exclude(order__status="Cancelled")),
+        )
+        .order_by("-like_count", "-rating", "-created")[:3]
+    )
+    liked_ids = set(request.user.liked_reviews.values_list("pk", flat=True)) if request.user.is_authenticated else set()
+    agg = Review.objects.filter(is_approved=True).aggregate(n=Count("id"), avg=Avg("rating"))
+    review_stats = {"n": agg["n"], "avg": agg["avg"],
+                    "stars": [i <= round(agg["avg"] or 0) for i in range(1, 6)]}
     return render(request, "home.html", {
         "posters": ps, "cats": Category.objects.all(),
         "q": q, "cat": cat, "sort": sort,
         "craftsmanship": craftsmanship,
-        "testimonials": testimonials,
+        "top_reviews": top_reviews, "liked_ids": liked_ids, "review_stats": review_stats,
     })
 
 def detail(request, pk):
@@ -56,12 +66,15 @@ def detail(request, pk):
         ("Category", str(p.category)),
     ]
     avg_val = p.reviews.filter(is_approved=True).aggregate(a=Avg("rating"))["a"]
+    reviews = p.reviews.filter(is_approved=True).select_related("user").annotate(
+        like_count=Count("likes")).order_by("-like_count", "-created")
+    liked_ids = set(request.user.liked_reviews.values_list("pk", flat=True)) if request.user.is_authenticated else set()
     return render(request, "detail.html", {
         "p": p,
         "sizes": [(s, p.price(s)) for s in SIZES],
         "can_review": can_review,
         "wished": wished,
-        "reviews": p.reviews.filter(is_approved=True).select_related("user").order_by("-created"),
+        "reviews": reviews, "liked_ids": liked_ids,
         "avg": avg_val,
         "avg_int": round(avg_val) if avg_val else 0,
         "specs": specs,
@@ -256,3 +269,18 @@ def profile(request):
         "order_count": len(all_orders),
     })
 
+
+@require_POST
+@login_required
+def review_like(request, pk):
+    r = get_object_or_404(Review, pk=pk, is_approved=True)
+    if r.user_id == request.user.id:
+        messages.info(request, "You can't like your own review.")
+    elif r.likes.filter(pk=request.user.pk).exists():
+        r.likes.remove(request.user)
+    else:
+        r.likes.add(request.user)
+    nxt = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}):
+        nxt = "/#reviews"
+    return redirect(nxt)

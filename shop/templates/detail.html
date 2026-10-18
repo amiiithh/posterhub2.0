@@ -116,7 +116,7 @@
     {% endif %}
 
     {% if reviews %}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="reviews" class="grid grid-cols-1 md:grid-cols-2 gap-6">
       {% for r in reviews %}
       <div class="lift-on-scroll bg-plaster/50 border border-stoneLine rounded-lg p-5 gallery-shadow-flat">
         <div class="flex items-center justify-between mb-3">
@@ -127,6 +127,7 @@
           <div class="text-champagne text-sm">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
         </div>
         {% if r.text %}<p class="text-xs text-charcoal leading-relaxed italic">"{{ r.text }}"</p>{% endif %}
+        <div class="mt-3 flex justify-end">{% with nu=request.path|add:"#reviews" %}{% include "_review_like.html" with next_url=nu %}{% endwith %}</div>
       </div>
       {% endfor %}
     </div>

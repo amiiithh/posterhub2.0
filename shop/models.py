@@ -183,6 +183,13 @@ class Review(models.Model):
     text = models.TextField()
     is_approved = models.BooleanField(default=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
+    likes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="liked_reviews", blank=True
+    )
+
+    @property
+    def stars(self):
+        return [i <= self.rating for i in range(1, 6)]
 
     class Meta:
         unique_together = ("user", "poster")

@@ -14,6 +14,7 @@ urlpatterns = [
     path("orders/<int:pk>/cancel/", v.cancel, name="cancel"),
     path("wishlist/", v.wishlist, name="wishlist"),
     path("wishlist/toggle/<int:pk>/", v.wish_toggle, name="wish_toggle"),
+    path("review/<int:pk>/like/", v.review_like, name="review_like"),
     path("register/", v.register, name="register"),
     path("profile/", v.profile, name="profile"),
 
