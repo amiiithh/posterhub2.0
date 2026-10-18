@@ -5,7 +5,7 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 ## Features
 
 **Storefront**
-- Cover-flow home page showing your posters, with search, category filter and price sort
+- Cover-flow home page that features your best-selling posters (best seller in the centre), with search, category filter and price sort below
 - Poster pages with A4, A3 and A2 sizes (priced from one base price), specs and reviews
 - Session-based cart, wishlist and a checkout form (Cash on delivery or simulated online payment)
 - Coupons (percentage or flat, with minimum order, usage limit and expiry)
@@ -28,7 +28,7 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 | Framework | Django 5 |
 | Database | PostgreSQL (SQLite is available as a zero-setup fallback for a quick look) |
 | Images | Pillow |
-| Front end | Django templates, Tailwind CSS (CDN), Font Awesome |
+| Front end | Django templates, Tailwind CSS and Font Awesome (both loaded from CDNs, so the pages need an internet connection) |
 
 ## Getting started
 
@@ -37,9 +37,10 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 ```bash
 git clone https://github.com/amiiithh/posterhub2.0.git
 cd posterhub2.0
-python -m venv venv
-venv\Scripts\activate            # Windows
-# source venv/bin/activate       # macOS / Linux
+py -m venv venv                  # Windows (use the python.org Python)
+venv\Scripts\activate
+# python3 -m venv venv           # macOS / Linux
+# source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -49,11 +50,19 @@ pip install -r requirements.txt
 createdb posterhub
 ```
 
-or, in `psql`: `CREATE DATABASE posterhub;`
+or, in `psql` or pgAdmin: `CREATE DATABASE posterhub;` (on Windows, `createdb` only works if PostgreSQL's `bin` folder is on your PATH)
 
 ### 3. Point Django at PostgreSQL
 
 Set these environment variables in the same terminal before running any `manage.py` command:
+
+```bat
+:: Windows Command Prompt
+set DB_ENGINE=postgres
+set DB_NAME=posterhub
+set DB_USER=postgres
+set DB_PASSWORD=your-password
+```
 
 ```powershell
 # Windows PowerShell
@@ -87,6 +96,49 @@ The `seed` command creates:
 ### 5. Add your own posters
 
 Log in as admin, open **/manage/posters/**, and add a poster with its image. Uploaded images are stored in `media/posters/`.
+
+## Running the server
+
+After the first-time setup above, this is all you need each time you come back to the project.
+
+1. Open a terminal in the project folder (the one that contains `manage.py`).
+2. Activate the virtual environment. You should see `(venv)` at the start of the line.
+   ```bash
+   venv\Scripts\activate            # Windows
+   # source venv/bin/activate       # macOS / Linux
+   ```
+3. If you use PostgreSQL, set the `DB_*` variables again (see step 3 above). They only last for that terminal window.
+4. If you pulled new code, update the database first:
+   ```bash
+   python manage.py migrate
+   ```
+5. Start the server:
+   ```bash
+   python manage.py runserver
+   ```
+6. Open http://127.0.0.1:8000/ in your browser.
+7. Stop the server with `Ctrl + C`.
+
+**Other ways to run it**
+
+```bash
+python manage.py runserver 8080            # use a different port
+python manage.py runserver 0.0.0.0:8000    # also reachable from a phone on the same Wi-Fi
+```
+
+For the second command, open `http://YOUR-PC-IP:8000/` on the phone. Find your IP with `ipconfig` (Windows) or `ifconfig` (macOS / Linux).
+
+**If something goes wrong**
+
+| Problem | Fix |
+|---|---|
+| `No module named 'django'` | The virtual environment is not active, or packages are missing. Activate it, then run `pip install -r requirements.txt`. |
+| `pip install` tries to compile Pillow and fails (zlib error) | You are using a non-standard Python (for example the MSYS2/MinGW one). Install Python from python.org and create the environment with `py -m venv venv`. `python -c "import sysconfig; print(sysconfig.get_platform())"` should print `win-amd64`. |
+| `Error: That port is already in use` | Another server is running. Stop it, or use another port such as `runserver 8080`. |
+| `no such table` or `relation ... does not exist` | Run `python manage.py migrate`. |
+| `could not connect to server` | PostgreSQL is not running, or the `DB_*` variables are missing or wrong. |
+| The home page has no posters | Run `python manage.py seed`, or add posters at `/manage/posters/`. |
+| Poster pictures are missing after cloning | Uploaded images are not stored in git. Upload them again from `/manage/posters/`. |
 
 ## Useful addresses
 
@@ -137,7 +189,7 @@ posterhub2.0/
 
 1. Set `DEBUG=0`, a strong `SECRET_KEY` and `ALLOWED_HOSTS`. With `DEBUG=0` the site redirects to HTTPS and sends HSTS headers.
 2. Use PostgreSQL (`DB_ENGINE=postgres`) and set the `EMAIL_*` variables.
-3. Run `python manage.py collectstatic`.
+3. Run `python manage.py collectstatic`, then serve the `staticfiles/` folder from your web server (the project does not include WhiteNoise).
 4. Serve `media/` (uploaded posters) from your web server or object storage. Django only serves it in debug mode.
 5. Do not run `seed` on the live site, and change the admin password.
 
@@ -145,7 +197,7 @@ posterhub2.0/
 
 - Online payment is simulated; there is no real payment gateway yet
 - No automated tests
-- Password-reset pages use Django's default look
+- Password-reset pages exist but use Django's default look, and the login page has no "Forgot password?" link
 - No rate limiting on login
 - No file size limit on image uploads
 - The home page lists all matching posters without pagination

@@ -4,7 +4,8 @@ from django.contrib.auth import login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.core.mail import send_mail
-from django.db.models import Avg, Count, Exists, OuterRef, Q
+from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -37,8 +38,20 @@ def home(request):
     agg = Review.objects.filter(is_approved=True).aggregate(n=Count("id"), avg=Avg("rating"))
     review_stats = {"n": agg["n"], "avg": agg["avg"],
                     "stars": [i <= round(agg["avg"] or 0) for i in range(1, 6)]}
+    ranked = (Poster.objects.filter(is_active=True)
+              .annotate(sold=Coalesce(Sum("order_items__qty", filter=~Q(order_items__order__status="Cancelled")), 0))
+              .order_by("-sold", "-created"))
+    top = list(ranked[:7])  # best sellers first, topped up with the newest posters
+    bestseller_ids = {p.pk for p in top[:2] if p.sold > 0}
+    # Arrange so the #1 seller sits in the centre of the deck, the rest fanning out beside it
+    deck, mid, k, i = [None] * len(top), len(top) // 2, 0, 0
+    while i < len(top):
+        for pos in ((mid,) if k == 0 else (mid + k, mid - k)):
+            if 0 <= pos < len(top) and i < len(top) and deck[pos] is None:
+                deck[pos] = top[i]; i += 1
+        k += 1
     return render(request, "home.html", {
-        "posters": ps, "cats": Category.objects.all(),
+        "posters": ps, "deck": deck, "bestseller_ids": bestseller_ids, "cats": Category.objects.all(),
         "q": q, "cat": cat, "sort": sort,
         "craftsmanship": craftsmanship,
         "top_reviews": top_reviews, "liked_ids": liked_ids, "review_stats": review_stats,
