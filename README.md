@@ -1,153 +1,151 @@
 # PosterHub
 
-A Django e-commerce storefront for archival wall-art posters, with a full custom admin panel.
+An online poster store built with **Python**, **Django** and **PostgreSQL**. Customers browse prints, pick a size, check out with coupons and review what they bought. Staff manage everything from a built-in control panel.
 
----
+## Features
 
-## Feature Overview
+**Storefront**
+- Cover-flow home page showing your posters, with search, category filter and price sort
+- Poster pages with A4, A3 and A2 sizes (priced from one base price), specs and reviews
+- Session-based cart, wishlist and a checkout form (Cash on delivery or simulated online payment)
+- Coupons (percentage or flat, with minimum order, usage limit and expiry)
+- Order history with cancellation, order confirmation email and a customer profile with saved address
 
-| Module | What's included |
+**Reviews**
+- Only customers who bought a poster (and did not cancel the order) can review it
+- Readers can like reviews; the home page shows the top reviews, most-liked first
+- Staff can hide a review at any time
+
+**Staff panel (`/manage/`)**
+- Dashboard with revenue, order status counts and best-selling posters
+- Manage orders (status, notes, item quantities), posters (with image upload), categories, coupons, users and reviews
+
+## Tech stack
+
+| Layer | Technology |
 |---|---|
-| **Storefront** | Home with search/filter/sort, product detail, gallery wall preview, lighting simulator |
-| **Cart (Vault)** | Session-based cart, qty inc/dec/remove |
-| **Checkout** | Shipping form, COD / Online payment, **coupon code apply**, order confirmation |
-| **Orders** | Order history, cancel in-progress orders |
-| **Wishlist** | Add/remove per-poster; dedicated wishlist page |
-| **Profile** | Saved addresses, order stats, available coupons |
-| **Reviews** | Leave a review after purchasing; star rating |
-| **Custom Dashboard** (`/manage/`) | Analytics, orders, poster CRUD, categories, coupons, users, reviews |
-| **Django Admin** (`/admin/`) | Full model-level admin with inline order items |
+| Language | Python 3.10+ |
+| Framework | Django 5 |
+| Database | PostgreSQL (SQLite is available as a zero-setup fallback for a quick look) |
+| Images | Pillow |
+| Front end | Django templates, Tailwind CSS (CDN), Font Awesome |
 
----
+## Getting started
 
-## Run locally (SQLite — zero config)
-
-### Windows — PowerShell
-
-```powershell
-py -3.10 -m venv venv
-venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py seed          # creates 12 sample posters + admin / admin123
-python manage.py runserver     # http://127.0.0.1:8000
-```
-
-### Windows — Command Prompt
-
-```cmd
-py -3.10 -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py seed
-python manage.py runserver
-```
-
-### macOS / Linux
+### 1. Get the code and install dependencies
 
 ```bash
-python -m venv venv && source venv/bin/activate
+git clone https://github.com/amiiithh/posterhub2.0.git
+cd posterhub2.0
+python -m venv venv
+venv\Scripts\activate            # Windows
+# source venv/bin/activate       # macOS / Linux
 pip install -r requirements.txt
-python manage.py migrate
-python manage.py seed
-python manage.py runserver
 ```
 
-> **Windows note:** `source` is bash-only. Use `venv\Scripts\activate` (cmd) or `venv\Scripts\Activate.ps1` (PowerShell).
-
----
-
-## Default credentials (after `seed`)
-
-| Role | Username | Password | Access |
-|---|---|---|---|
-| Superuser | `admin` | `admin123` | Everything |
-
----
-
-## URL map
-
-| URL | Description |
-|---|---|
-| `/` | Storefront / home |
-| `/poster/<id>/` | Product detail + reviews |
-| `/cart/` | Vault (cart) |
-| `/checkout/` | Checkout with coupon |
-| `/orders/` | My orders |
-| `/wishlist/` | My wishlist |
-| `/profile/` | Account profile |
-| `/accounts/login/` | Sign in |
-| `/register/` | Register |
-| `/manage/dashboard/` | **Custom analytics dashboard** |
-| `/manage/orders/` | Staff order management |
-| `/manage/posters/` | Poster CRUD |
-| `/manage/categories/` | Category CRUD |
-| `/manage/coupons/` | Coupon management |
-| `/manage/users/` | User management (superuser only) |
-| `/manage/reviews/` | Review moderation |
-| `/admin/` | Django built-in admin |
-
----
-
-## Coupon codes (seeded)
-
-| Code | Type | Value | Min order |
-|---|---|---|---|
-| `WELCOME15` | % off | 15% | none |
-| `STUDIO50` | flat INR | ₹500 off | ₹2,500 |
-| `FESTIVE25` | % off | 25% | ₹1,500 |
-
----
-
-## PostgreSQL
-
-The `psycopg2-binary` driver is in `requirements.txt`. Create a database, then set `DB_ENGINE=postgres`:
+### 2. Create the PostgreSQL database
 
 ```bash
 createdb posterhub
-export DB_ENGINE=postgres DB_NAME=posterhub DB_USER=postgres DB_PASSWORD=... DB_HOST=127.0.0.1 DB_PORT=5432
+```
+
+or, in `psql`: `CREATE DATABASE posterhub;`
+
+### 3. Point Django at PostgreSQL
+
+Set these environment variables in the same terminal before running any `manage.py` command:
+
+```powershell
+# Windows PowerShell
+$env:DB_ENGINE="postgres"
+$env:DB_NAME="posterhub"
+$env:DB_USER="postgres"
+$env:DB_PASSWORD="your-password"
+```
+
+```bash
+# macOS / Linux
+export DB_ENGINE=postgres DB_NAME=posterhub DB_USER=postgres DB_PASSWORD=your-password
+```
+
+If `DB_ENGINE` is not set, the app uses a local SQLite file instead.
+
+### 4. Create the tables, add sample data and run
+
+```bash
 python manage.py migrate
-python manage.py seed
+python manage.py seed            # sample categories, posters, coupons and an admin account
 python manage.py runserver
 ```
 
-On Windows PowerShell: `$env:DB_ENGINE="postgres"` etc.
+Open http://127.0.0.1:8000/
 
-| Variable | Default | Notes |
+The `seed` command creates:
+- an admin user: **admin / admin123** (for local use only, change it or do not seed on a live site)
+- the coupons `WELCOME15`, `STUDIO50` and `FESTIVE25`
+
+### 5. Add your own posters
+
+Log in as admin, open **/manage/posters/**, and add a poster with its image. Uploaded images are stored in `media/posters/`.
+
+## Useful addresses
+
+| Address | What it is |
+|---|---|
+| `/` | Home page |
+| `/register/`, `/accounts/login/` | Sign up and log in |
+| `/cart/`, `/checkout/`, `/orders/` | Shopping flow |
+| `/wishlist/`, `/profile/` | Customer pages |
+| `/manage/dashboard/` | Staff panel (staff users only) |
+| `/admin/` | Django admin |
+
+## Configuration
+
+All settings come from environment variables.
+
+| Variable | Default | Purpose |
 |---|---|---|
-| `DB_ENGINE` | *(sqlite)* | `postgres` or `mysql` |
-| `DB_NAME` | `posterhub` | Database name |
-| `DB_USER` | `postgres` | Role |
-| `DB_PASSWORD` | *(empty)* | Role password |
-| `DB_HOST` | `127.0.0.1` | Server host |
-| `DB_PORT` | `5432` | Server port |
-| `DB_CONN_MAX_AGE` | `60` | Seconds to reuse a connection |
+| `DEBUG` | `1` | Set to `0` in production |
+| `SECRET_KEY` | development key | Must be a long random value in production |
+| `ALLOWED_HOSTS` | any (debug only) | Comma-separated hostnames when `DEBUG=0` |
+| `DB_ENGINE` | `sqlite` | `postgres` to use PostgreSQL |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | `posterhub`, `postgres`, empty, `127.0.0.1`, `5432` | PostgreSQL connection |
+| `EMAIL_BACKEND` | console | Prints emails in the terminal; set an SMTP backend for real mail |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` | see `settings.py` | SMTP details |
 
-### Migrate existing SQLite data to PostgreSQL
-
-```bash
-# 1. Dump from SQLite
-python manage.py dumpdata --natural-foreign --natural-primary \
-  -e contenttypes -e auth.Permission -e sessions > data.json
-# 2. Set DB_ENGINE=postgres, then:
-python manage.py migrate
-python manage.py loaddata data.json
-```
-
----
-
-## MySQL
+## Project structure
 
 ```
-DB_ENGINE=mysql DB_NAME=posterhub DB_USER=root DB_PASSWORD=... DB_HOST=127.0.0.1
+posterhub2.0/
+├── manage.py
+├── requirements.txt
+├── posterhub/                  # Django project (settings, root URLs, wsgi/asgi)
+└── shop/                       # The store app
+    ├── models.py               # Category, Poster, Profile, Coupon, Order, OrderItem, Wishlist, Review
+    ├── views.py                # Storefront views
+    ├── views_admin.py          # Staff panel views
+    ├── forms.py
+    ├── urls.py
+    ├── context.py              # Cart count and shared template data
+    ├── admin.py                # Django admin setup
+    ├── migrations/
+    ├── management/commands/seed.py
+    └── templates/              # All pages, including the staff panel
 ```
 
-Uncomment `mysqlclient` in `requirements.txt` before installing.
+## Going live checklist
 
----
+1. Set `DEBUG=0`, a strong `SECRET_KEY` and `ALLOWED_HOSTS`. With `DEBUG=0` the site redirects to HTTPS and sends HSTS headers.
+2. Use PostgreSQL (`DB_ENGINE=postgres`) and set the `EMAIL_*` variables.
+3. Run `python manage.py collectstatic`.
+4. Serve `media/` (uploaded posters) from your web server or object storage. Django only serves it in debug mode.
+5. Do not run `seed` on the live site, and change the admin password.
 
-## Email
+## Known limitations
 
-In development, emails are printed to the console (`EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend`).
-For production set `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` env vars.
+- Online payment is simulated; there is no real payment gateway yet
+- No automated tests
+- Password-reset pages use Django's default look
+- No rate limiting on login
+- No file size limit on image uploads
+- The home page lists all matching posters without pagination
