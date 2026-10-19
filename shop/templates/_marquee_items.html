@@ -1,0 +1,10 @@
+{% if promo_coupon %}<span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-champagne"></i> Use code {{ promo_coupon.code }}: {{ promo_coupon.title }}</span>
+<span class="text-stone-500 font-light">•</span>{% endif %}
+<span class="flex items-center gap-2"><i class="fa-solid fa-feather text-stone-300"></i> 300 GSM Archival Velvet Matte Paper</span>
+<span class="text-stone-500 font-light">•</span>
+<span class="flex items-center gap-2"><i class="fa-solid fa-tape text-champagne"></i> Damage-Free Removable Nano-Adhesive Tabs Included</span>
+<span class="text-stone-500 font-light">•</span>
+<span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-stone-300"></i> Crush-Proof Architectural Tube Dispatch</span>
+<span class="text-stone-500 font-light">•</span>
+{% if site_rating %}<span class="flex items-center gap-2"><i class="fa-solid fa-star text-champagne text-[10px]"></i> Rated {{ site_rating.avg|floatformat:1 }}/5 from {{ site_rating.n }} customer review{{ site_rating.n|pluralize }}</span>
+<span class="text-stone-500 font-light">•</span>{% endif %}

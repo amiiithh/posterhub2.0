@@ -28,19 +28,22 @@
             <div>
               <label for="name" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Full Name</label>
               <input id="name" name="name" class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all"
-                value="{{ user.get_full_name|default:user.username }}" required placeholder="Your full name">
+                value="{{ form.name.value|default:'' }}" required placeholder="Your full name">
+              {% for e in form.name.errors %}<p class="mt-1.5 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
             </div>
 
             <div>
               <label for="phone" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Phone Number</label>
               <input id="phone" name="phone" class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all"
-                pattern="[0-9+ ]{8,15}" required placeholder="+91 98765 43210">
+                value="{{ form.phone.value|default:'' }}" pattern="[0-9+ -]{8,20}" required placeholder="+91 98765 43210">
+              {% for e in form.phone.errors %}<p class="mt-1.5 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
             </div>
 
             <div>
               <label for="address" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Shipping Address</label>
               <textarea id="address" name="address" rows="4" class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all resize-none"
-                required placeholder="Street, city, state, PIN code"></textarea>
+                required placeholder="Street, city, state, PIN code">{{ form.address.value|default:'' }}</textarea>
+              {% for e in form.address.errors %}<p class="mt-1.5 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
             </div>
 
           </div>
@@ -55,7 +58,7 @@
 
           <div class="space-y-3 mb-8">
             <label id="pay-cod-label" class="flex items-center gap-4 p-4 bg-plaster border border-stoneLine rounded-sm cursor-pointer hover:border-noir transition-all group">
-              <input type="radio" name="payment" value="Cash on delivery" checked onchange="updatePayLabel()" class="accent-noir">
+              <input type="radio" name="payment" value="Cash on delivery" {% if form.payment.value != "Online (simulated)" %}checked{% endif %} onchange="updatePayLabel()" class="accent-noir">
               <div>
                 <div class="font-semibold text-sm text-noir">Cash on Delivery</div>
                 <div class="text-stone-500 text-xs mt-0.5">Pay when your poster arrives — no card needed</div>
@@ -64,7 +67,7 @@
             </label>
 
             <label id="pay-online-label" class="flex items-center gap-4 p-4 bg-plaster border border-stoneLine rounded-sm cursor-pointer hover:border-noir transition-all group">
-              <input type="radio" name="payment" value="Online (simulated)" onchange="updatePayLabel()" class="accent-noir">
+              <input type="radio" name="payment" value="Online (simulated)" {% if form.payment.value == "Online (simulated)" %}checked{% endif %} onchange="updatePayLabel()" class="accent-noir">
               <div>
                 <div class="font-semibold text-sm text-noir">Online Payment</div>
                 <div class="text-stone-500 text-xs mt-0.5">UPI · Netbanking · Visa / Mastercard</div>

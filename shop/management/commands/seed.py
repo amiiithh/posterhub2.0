@@ -15,7 +15,7 @@ class Command(BaseCommand):
             Poster.objects.get_or_create(title=t, defaults=dict(category=cats[c], artist=ar, description=de, base_price=pr, hue=h))
         if not User.objects.filter(username="admin").exists(): User.objects.create_superuser("admin", "admin@posterhub.com", "admin123")
         COUPONS = [
-            dict(code="WELCOME15", title="15% off your first order", kind="percent", value=15, min_total=0),
+            dict(code="WELCOME15", title="15% off your first order", kind="percent", value=15, min_total=0, first_order_only=True),
             dict(code="STUDIO50", title="₹500 off orders above ₹2,500", kind="flat", value=500, min_total=2500),
             dict(code="FESTIVE25", title="25% off the festive wall upgrade", kind="percent", value=25, min_total=1500),
         ]

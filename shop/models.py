@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -143,6 +144,9 @@ class Coupon(models.Model):
         null=True, blank=True, help_text="Blank = never expires"
     )
     active = models.BooleanField(default=True, db_index=True)
+    first_order_only = models.BooleanField(
+        default=False, help_text="Only valid on a customer's first (non-cancelled) order"
+    )
 
     class Meta:
         indexes = [models.Index(fields=["active", "valid_until"])]
@@ -158,6 +162,16 @@ class Coupon(models.Model):
         if self.max_uses is not None and self.times_used >= self.max_uses:
             return False
         return True
+
+    def error_for(self, user, total):
+        """Why this coupon can't be used right now ('' when it can)."""
+        if not self.is_available():
+            return "is expired or unavailable."
+        if total < self.min_total:
+            return f"needs a minimum order of ₹{self.min_total}."
+        if self.first_order_only and Order.objects.filter(user=user).exclude(status="Cancelled").exists():
+            return "is valid on your first order only."
+        return ""
 
     def apply(self, total):
         """Return the discount amount for a given cart total."""
@@ -179,7 +193,9 @@ class Review(models.Model):
         Poster, on_delete=models.CASCADE, related_name="reviews"
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    rating = models.PositiveSmallIntegerField()
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     text = models.TextField()
     is_approved = models.BooleanField(default=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -194,6 +210,12 @@ class Review(models.Model):
     class Meta:
         unique_together = ("user", "poster")
         indexes = [models.Index(fields=["poster", "-created"])]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(rating__gte=1, rating__lte=5),
+                name="review_rating_between_1_and_5",
+            )
+        ]
 
     def __str__(self):
         return f"Review by {self.user} on {self.poster}"

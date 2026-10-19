@@ -109,6 +109,7 @@
           <div class="flex items-center gap-2">
             {{ form.active }}
             <label class="text-sm font-semibold text-[#5A607A]">Active</label>
+            <span class="ml-4 inline-flex items-center gap-2">{{ form.first_order_only }}<label class="text-sm font-semibold text-[#5A607A]">First order only</label></span>
           </div>
           <div class="flex gap-3 pt-2 border-t border-[#F0F2F8]">
             <button type="submit" name="action" value="save" class="flex-1 py-2.5 bg-[#111] text-white text-[12px] font-bold rounded-lg hover:bg-[#222] transition-all flex items-center justify-center gap-2"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>

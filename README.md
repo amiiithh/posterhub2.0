@@ -8,8 +8,10 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 - Cover-flow home page that features your best-selling posters (best seller in the centre), with search, category filter and price sort below
 - Poster pages with A4, A3 and A2 sizes (priced from one base price), specs and reviews
 - Session-based cart, wishlist and a checkout form (Cash on delivery or simulated online payment)
-- Coupons (percentage or flat, with minimum order, usage limit and expiry)
-- Order history with cancellation, order confirmation email and a customer profile with saved address
+- Coupons (percentage or flat, with minimum order, usage limit, expiry and an optional first-order-only rule)
+- Order history with cancellation, an order confirmation email (sign-up asks for an email address) and a customer profile with saved address
+- Checkout, cart and review forms are validated, and an order is saved all-or-nothing, so a failure never leaves a half-created order
+- The shop grid is paginated (12 posters per page)
 
 **Reviews**
 - Only customers who bought a poster (and did not cancel the order) can review it
@@ -91,7 +93,7 @@ Open http://127.0.0.1:8000/
 
 The `seed` command creates:
 - an admin user: **admin / admin123** (for local use only, change it or do not seed on a live site)
-- the coupons `WELCOME15`, `STUDIO50` and `FESTIVE25`
+- the coupons `WELCOME15` (first order only), `STUDIO50` and `FESTIVE25`
 
 ### 5. Add your own posters
 
@@ -140,6 +142,14 @@ For the second command, open `http://YOUR-PC-IP:8000/` on the phone. Find your I
 | The home page has no posters | Run `python manage.py seed`, or add posters at `/manage/posters/`. |
 | Poster pictures are missing after cloning | Uploaded images are not stored in git. Upload them again from `/manage/posters/`. |
 
+## Running the tests
+
+```bash
+python manage.py test
+```
+
+The suite uses a temporary database, so it never touches your data. It covers the cart, checkout, coupons (including the first-order rule and usage limits), reviews and likes, wishlist, hidden posters, login and staff permissions, pagination and the best-seller deck.
+
 ## Useful addresses
 
 | Address | What it is |
@@ -178,7 +188,8 @@ posterhub2.0/
     ├── views_admin.py          # Staff panel views
     ├── forms.py
     ├── urls.py
-    ├── context.py              # Cart count and shared template data
+    ├── context.py              # Cart count, real rating and active coupon for the top strip
+    ├── tests.py                # Automated tests
     ├── admin.py                # Django admin setup
     ├── migrations/
     ├── management/commands/seed.py
@@ -196,8 +207,6 @@ posterhub2.0/
 ## Known limitations
 
 - Online payment is simulated; there is no real payment gateway yet
-- No automated tests
 - Password-reset pages exist but use Django's default look, and the login page has no "Forgot password?" link
 - No rate limiting on login
 - No file size limit on image uploads
-- The home page lists all matching posters without pagination
