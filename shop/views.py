@@ -13,11 +13,11 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+from .cart import Cart
 from .forms import CartAddForm, CartUpdateForm, CheckoutForm, RegisterForm, ReviewForm
 from .models import *
 
 log = logging.getLogger(__name__)
-MAX_QTY = 20          # most copies of one poster+size in a cart
 HOME_PAGE_SIZE = 12   # posters per page on the home page
 APPROVED_AVG = Avg("reviews__rating", filter=Q(reviews__is_approved=True))
 
@@ -114,24 +114,19 @@ def detail(request, pk):
     })
 
 def _cart(request):
-    """Return (items, total) for the session cart, dropping invalid or hidden entries."""
-    raw = request.session.get("cart", {})
+    """Return (items, total) for the visitor's Vault, ignoring posters that are no longer on sale."""
     parsed = []
-    for k, q in raw.items():
-        pid, _, size = str(k).partition(":")
-        if pid.isdigit() and size in SIZES and isinstance(q, int) and q > 0:
-            parsed.append((k, int(pid), size, min(q, MAX_QTY)))
+    for key, qty in Cart(request).lines().items():
+        pid, _, size = key.partition(":")
+        parsed.append((key, int(pid), size, qty))
     posters = Poster.objects.filter(is_active=True).select_related("category").in_bulk({p for _, p, _, _ in parsed})
-    items, total, clean = [], 0, {}
-    for k, pid, size, q in parsed:
+    items, total = [], 0
+    for key, pid, size, qty in parsed:
         p = posters.get(pid)
         if p:
             pr = p.price(size)
-            items.append({"key": k, "poster": p, "size": size, "qty": q, "price": pr, "sub": pr * q})
-            total += pr * q
-            clean[k] = q
-    if clean != raw:
-        request.session["cart"] = clean
+            items.append({"key": key, "poster": p, "size": size, "qty": qty, "price": pr, "sub": pr * qty})
+            total += pr * qty
     return items, total
 
 def cart(request):
@@ -147,23 +142,17 @@ def cart_add(request):
     if not p:
         messages.error(request, "Sorry, that poster is no longer available.")
         return redirect("home")
-    c = request.session.get("cart", {}); k = f"{p.pk}:{form.cleaned_data['size']}"
-    if c.get(k, 0) >= MAX_QTY:
-        messages.info(request, f"You can order up to {MAX_QTY} of the same print.")
+    if Cart(request).add(p.pk, form.cleaned_data["size"]):
+        messages.success(request, "Added to cart.")
     else:
-        c[k] = c.get(k, 0) + 1; messages.success(request, "Added to cart.")
-    request.session["cart"] = c
+        messages.info(request, f"You can order up to {MAX_CART_QTY} of the same print.")
     return redirect("cart")
 
 @require_POST
 def cart_update(request):
     form = CartUpdateForm(request.POST)
-    c = request.session.get("cart", {})
-    if form.is_valid() and form.cleaned_data["key"] in c:
-        k, a = form.cleaned_data["key"], form.cleaned_data["action"]
-        c[k] = min(MAX_QTY, c[k] + {"inc": 1, "dec": -1}.get(a, -c[k]))
-        if c[k] < 1: del c[k]
-        request.session["cart"] = c
+    if form.is_valid():
+        Cart(request).update(form.cleaned_data["key"], form.cleaned_data["action"])
     return redirect("cart")
 
 def _coupon_state(user, code, total):
@@ -239,9 +228,9 @@ def checkout(request):
                 OrderItem.objects.bulk_create([
                     OrderItem(order=o, poster=i["poster"], size=i["size"], qty=i["qty"], price=i["price"]) for i in items
                 ])
+                Cart(request).clear()   # inside the same transaction: a failed order keeps the Vault intact
                 if coupon:
                     Coupon.objects.filter(pk=coupon.pk).update(times_used=F("times_used") + 1)
-            request.session["cart"] = {}
             request.session.pop("coupon_code", None)
             _send_confirmation(o, request.user.email)
             messages.success(request, f"Order #{o.pk} placed successfully!")
@@ -268,7 +257,9 @@ def orders(request):
 @require_POST
 def cancel(request, pk):
     o = get_object_or_404(Order, pk=pk, user=request.user)
-    if o.status == "Processing": o.status = "Cancelled"; o.save(); messages.info(request, "Order cancelled.")
+    if o.status == "Processing":
+        changed, _ = o.change_status("Cancelled")
+        if changed: messages.info(request, "Order cancelled.")
     return redirect("orders")
 
 @login_required
@@ -300,15 +291,10 @@ def register(request):
 
 
 @require_POST
-def cart_preserving_logout(request):
-    """Logout while keeping the cart and coupon in the new (anonymous) session."""
-    cart = request.session.get("cart", {})
-    coupon_code = request.session.get("coupon_code", "")
-    auth_logout(request)          # flushes session, creates a fresh one
-    if cart:
-        request.session["cart"] = cart
-    if coupon_code:
-        request.session["coupon_code"] = coupon_code
+def logout_view(request):
+    """Sign out. The session is cleared, so the next person on this browser starts with an empty Vault;
+    the signed-in customer's own Vault stays saved on their account."""
+    auth_logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL or "/")
 
 @login_required

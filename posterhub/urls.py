@@ -2,12 +2,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from shop.views import cart_preserving_logout
+from shop.views import logout_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Override Django's default logout to preserve the cart across session flush
-    path("accounts/logout/", cart_preserving_logout, name="logout"),
+    # Sign out clears the session, so one customer's Vault is never shown to the next person
+    path("accounts/logout/", logout_view, name="logout"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("", include("shop.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

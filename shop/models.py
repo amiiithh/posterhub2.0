@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 SIZES = {"A4": 1, "A3": 1.6, "A2": 2.4}
+MAX_CART_QTY = 20   # most copies of one poster and size in a Vault (cart)
 
 
 class Category(models.Model):
@@ -39,6 +40,14 @@ class Poster(models.Model):
             models.Index(fields=["category", "-created"]),
             models.Index(fields=["is_active", "-created"]),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.image and not self.image._committed:   # a new upload: shrink it before it is stored
+            from .images import shrink
+            small = shrink(self.image.file, self.image.name)
+            if small is not None:
+                self.image = small
+        super().save(*args, **kwargs)
 
     def price(self, size):
         return round(self.base_price * SIZES[size])
@@ -94,6 +103,44 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.pk}"
+
+    TRANSITIONS = {
+        "Processing": {"Shipped", "Cancelled"},
+        "Shipped": {"Delivered", "Cancelled"},
+        "Delivered": set(),
+        "Cancelled": set(),
+    }
+
+    @transaction.atomic
+    def change_status(self, new):
+        """Move the order to a new status. Returns (changed, message). Cancelling gives the coupon use back."""
+        locked = Order.objects.select_for_update().get(pk=self.pk)
+        if new == locked.status:
+            return False, f"Order #{self.pk} is already {new}."
+        if new not in self.TRANSITIONS.get(locked.status, set()):
+            return False, f"Order #{self.pk} can't go from {locked.status} to {new}."
+        self.status = new
+        self.save(update_fields=["status", "updated"])
+        if new == "Cancelled" and self.coupon_code:
+            Coupon.objects.filter(code=self.coupon_code, times_used__gt=0).update(
+                times_used=models.F("times_used") - 1
+            )
+        return True, f"Order #{self.pk} status is now {new}."
+
+    def recalculate(self):
+        """Recompute discount and total from the current item quantities (does not save)."""
+        subtotal = sum(i.qty * i.price for i in self.items.all())
+        discount = self.discount_amount
+        if self.coupon_code:
+            coupon = Coupon.objects.filter(code=self.coupon_code).first()
+            if coupon and coupon.kind == "percent":
+                discount = round(subtotal * coupon.value / 100)
+            elif coupon:
+                discount = min(coupon.value, subtotal)
+            else:
+                discount = min(discount, subtotal)
+        self.discount_amount = discount
+        self.total = max(0, subtotal - discount)
 
 
 class OrderItem(models.Model):
@@ -219,3 +266,23 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review by {self.user} on {self.poster}"
+
+
+class CartItem(models.Model):
+    """One line of a signed-in customer's saved Vault (cart)."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cart_items")
+    poster = models.ForeignKey(Poster, on_delete=models.CASCADE, related_name="cart_items")
+    size = models.CharField(max_length=3)
+    qty = models.PositiveSmallIntegerField(default=1)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "poster", "size"], name="one_cart_line_per_user_poster_size"),
+            models.CheckConstraint(condition=models.Q(qty__gte=1, qty__lte=MAX_CART_QTY), name="cart_qty_between_1_and_20"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} - {self.poster} {self.size} x{self.qty}"
+

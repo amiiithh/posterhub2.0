@@ -7,11 +7,13 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 **Storefront**
 - Cover-flow home page that features your best-selling posters (best seller in the centre), with search, category filter and price sort below
 - Poster pages with A4, A3 and A2 sizes (priced from one base price), specs and reviews
-- Session-based cart, wishlist and a checkout form (Cash on delivery or simulated online payment)
+- The Vault (cart) belongs to your account: it is saved in the database, follows you to any browser or device, and is never shown to the next person who uses the same computer (signing out clears the browser). Items added before signing in are merged into your Vault when you sign in. Also a wishlist and a checkout form (Cash on delivery or simulated online payment)
 - Coupons (percentage or flat, with minimum order, usage limit, expiry and an optional first-order-only rule)
 - Order history with cancellation, an order confirmation email (sign-up asks for an email address) and a customer profile with saved address
 - Checkout, cart and review forms are validated, and an order is saved all-or-nothing, so a failure never leaves a half-created order
 - The shop grid is paginated (12 posters per page)
+- Uploaded poster images are resized (longest side 1400 px) and compressed automatically; uploads over 10 MB are refused
+- Order rules: status moves forward only (Processing, Shipped, Delivered, or Cancelled), quantities can be edited only while an order is Processing and the total updates with them, and cancelling an order gives its coupon use back
 
 **Reviews**
 - Only customers who bought a poster (and did not cancel the order) can review it
@@ -85,14 +87,15 @@ If `DB_ENGINE` is not set, the app uses a local SQLite file instead.
 
 ```bash
 python manage.py migrate
-python manage.py seed            # sample categories, posters, coupons and an admin account
+python manage.py seed            # sample categories, posters and coupons (plus a development admin, see below)
 python manage.py runserver
 ```
 
 Open http://127.0.0.1:8000/
 
 The `seed` command creates:
-- an admin user: **admin / admin123** (for local use only, change it or do not seed on a live site)
+- in development (when you start the project with `python manage.py ...`), an admin user: **admin / admin123**
+- on a live site no admin is created unless you ask: `python manage.py seed --admin-password "a-strong-password"` (or set `ADMIN_PASSWORD`), or use `python manage.py createsuperuser`
 - the coupons `WELCOME15` (first order only), `STUDIO50` and `FESTIVE25`
 
 ### 5. Add your own posters
@@ -128,7 +131,7 @@ python manage.py runserver 8080            # use a different port
 python manage.py runserver 0.0.0.0:8000    # also reachable from a phone on the same Wi-Fi
 ```
 
-For the second command, open `http://YOUR-PC-IP:8000/` on the phone. Find your IP with `ipconfig` (Windows) or `ifconfig` (macOS / Linux).
+For the second command, find your PC's IP with `ipconfig` (Windows) or `ifconfig` (macOS / Linux), allow it before starting the server (for example `set ALLOWED_HOSTS=192.168.1.5` in Command Prompt, or `ALLOWED_HOSTS=*` to allow any address while testing at home), then open `http://YOUR-PC-IP:8000/` on the phone. In development only `localhost` and `127.0.0.1` are accepted by default.
 
 **If something goes wrong**
 
@@ -141,6 +144,15 @@ For the second command, open `http://YOUR-PC-IP:8000/` on the phone. Find your I
 | `could not connect to server` | PostgreSQL is not running, or the `DB_*` variables are missing or wrong. |
 | The home page has no posters | Run `python manage.py seed`, or add posters at `/manage/posters/`. |
 | Poster pictures are missing after cloning | Uploaded images are not stored in git. Upload them again from `/manage/posters/`. |
+
+## Shrinking images uploaded earlier
+
+New uploads are resized automatically. To shrink pictures that were uploaded before that existed:
+
+```bash
+python manage.py shrink_images --dry-run    # shows what would change
+python manage.py shrink_images              # does it (back up the media/ folder first)
+```
 
 ## Running the tests
 
@@ -165,14 +177,19 @@ The suite uses a temporary database, so it never touches your data. It covers th
 
 All settings come from environment variables.
 
+**Development and production.** The project is safe by default. Development mode turns on by itself only when you start it with `python manage.py ...` (`runserver`, `test`, `migrate` and so on). Anything else, such as gunicorn or another web server, is treated as production. In production the site **refuses to start** unless `SECRET_KEY` (32+ characters) and `ALLOWED_HOSTS` are set. You can override the automatic choice with `DEBUG=1` or `DEBUG=0`.
+
 | Variable | Default | Purpose |
 |---|---|---|
-| `DEBUG` | `1` | Set to `0` in production |
-| `SECRET_KEY` | development key | Must be a long random value in production |
-| `ALLOWED_HOSTS` | any (debug only) | Comma-separated hostnames when `DEBUG=0` |
+| `DEBUG` | on with `manage.py`, off elsewhere | `1` or `0` to force it |
+| `SECRET_KEY` | built-in key in development only | Required (32+ random characters) when `DEBUG` is off. Generate one: `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
+| `ALLOWED_HOSTS` | localhost only in development | Required when `DEBUG` is off: comma-separated hostnames |
+| `CSRF_TRUSTED_ORIGINS` | none | Comma-separated `https://...` origins, if your host needs them |
+| `BEHIND_PROXY` | `0` | Set to `1` when a proxy or load balancer handles HTTPS |
+| `ADMIN_PASSWORD` | none | Password for the admin account created by `seed` outside development |
 | `DB_ENGINE` | `sqlite` | `postgres` to use PostgreSQL |
 | `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | `posterhub`, `postgres`, empty, `127.0.0.1`, `5432` | PostgreSQL connection |
-| `EMAIL_BACKEND` | console | Prints emails in the terminal; set an SMTP backend for real mail |
+| `EMAIL_BACKEND` | console in development, SMTP otherwise | Set the `EMAIL_*` variables below for real mail |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` | see `settings.py` | SMTP details |
 
 ## Project structure
@@ -198,15 +215,14 @@ posterhub2.0/
 
 ## Going live checklist
 
-1. Set `DEBUG=0`, a strong `SECRET_KEY` and `ALLOWED_HOSTS`. With `DEBUG=0` the site redirects to HTTPS and sends HSTS headers.
+1. Run it with a real web server (not `runserver`) and set `SECRET_KEY` and `ALLOWED_HOSTS`. The site will not start without them. With `DEBUG` off it redirects to HTTPS and sends HSTS headers.
 2. Use PostgreSQL (`DB_ENGINE=postgres`) and set the `EMAIL_*` variables.
 3. Run `python manage.py collectstatic`, then serve the `staticfiles/` folder from your web server (the project does not include WhiteNoise).
 4. Serve `media/` (uploaded posters) from your web server or object storage. Django only serves it in debug mode.
-5. Do not run `seed` on the live site, and change the admin password.
+5. Do not run `seed` on the live site. If you ever ran it in development, that database has the default `admin / admin123` login: change it with `python manage.py changepassword admin`.
 
 ## Known limitations
 
 - Online payment is simulated; there is no real payment gateway yet
 - Password-reset pages exist but use Django's default look, and the login page has no "Forgot password?" link
 - No rate limiting on login
-- No file size limit on image uploads

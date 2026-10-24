@@ -1,10 +1,12 @@
 from django.core.cache import cache
 from django.db.models import Avg, Count
 
+from .cart import Cart
+
 
 def cart_count(request):
-    cart = request.session.get("cart", {})
-    return {"cart_count": sum(q for q in cart.values() if isinstance(q, int))}
+    """Number on the Vault button: exactly what the cart page shows for this visitor."""
+    return {"cart_count": Cart(request).count()}
 
 
 def site_promos(request):

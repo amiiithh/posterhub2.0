@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 
+from . import images
 from .models import SIZES, Poster, Category, Order, OrderItem, Coupon
 
 
@@ -18,6 +19,16 @@ class AddEditPosterForm(forms.ModelForm):
             "base_price": forms.NumberInput(attrs={"min": "0", "step": "1"}),
             "hue": forms.NumberInput(attrs={"min": "0", "max": "360", "step": "1"}),
         }
+
+    def clean_image(self):
+        img = self.cleaned_data.get("image")
+        if img and hasattr(img, "size") and not getattr(img, "_committed", False):
+            if img.size > images.MAX_UPLOAD_BYTES:
+                raise forms.ValidationError(f"Image is too large (max {images.MAX_UPLOAD_BYTES // (1024 * 1024)} MB).")
+            w, h = img.image.size
+            if w * h > images.MAX_PIXELS:
+                raise forms.ValidationError("Image has too many pixels. Please upload a smaller one.")
+        return img
 
     def clean_base_price(self):
         v = self.cleaned_data["base_price"]
@@ -132,3 +143,9 @@ class RegisterForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ("username", "email")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("An account with this email already exists. Try logging in instead.")
+        return email

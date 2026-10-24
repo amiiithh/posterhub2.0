@@ -155,9 +155,8 @@ def admin_orders(request):
         st = request.POST.get("status")
         o = get_object_or_404(Order, pk=pk)
         if st in dict(Order.STATUS):
-            o.status = st
-            o.save(update_fields=["status", "updated"])
-            messages.success(request, f"Order #{pk} status → {st}.")
+            changed, msg = o.change_status(st)
+            (messages.success if changed else messages.error)(request, msg)
         return redirect(request.get_full_path())
 
     paginator = Paginator(qs, PAGE_SIZE)
@@ -187,24 +186,27 @@ def admin_order_detail(request, pk):
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "save_qty":
+            if o.status != "Processing":
+                messages.error(request, f"Quantities can only be changed while an order is Processing (this one is {o.status}).")
+                return redirect("admin_order_detail", pk=pk)
             for i in o.items.all():
                 key = f"qty-{i.pk}"
                 if key in request.POST:
                     try:
-                        q = max(1, int(request.POST[key]))
-                        i.qty = q
+                        i.qty = min(99, max(1, int(request.POST[key])))
                         i.save(update_fields=["qty"])
                     except ValueError:
                         pass
-            messages.success(request, "Item quantities updated.")
+            o.recalculate()
+            o.save(update_fields=["total", "discount_amount", "updated"])
+            messages.success(request, f"Item quantities updated. New order total: ₹{o.total}.")
             return redirect("admin_order_detail", pk=pk)
 
         elif action == "update_status":
             st = request.POST.get("status")
             if st in dict(Order.STATUS):
-                o.status = st
-                o.save(update_fields=["status", "updated"])
-                messages.success(request, f"Status updated to {st}.")
+                changed, msg = o.change_status(st)
+                (messages.success if changed else messages.error)(request, msg)
             return redirect("admin_order_detail", pk=pk)
 
         elif action == "save_notes":
@@ -214,10 +216,8 @@ def admin_order_detail(request, pk):
             return redirect("admin_order_detail", pk=pk)
 
         elif action == "cancel":
-            if o.status == "Processing":
-                o.status = "Cancelled"
-                o.save(update_fields=["status", "updated"])
-                messages.warning(request, f"Order #{pk} cancelled.")
+            changed, msg = o.change_status("Cancelled")
+            (messages.warning if changed else messages.error)(request, f"Order #{pk} cancelled." if changed else msg)
             return redirect("admin_orders")
 
     items = o.items.select_related("poster__category").annotate(
@@ -418,7 +418,7 @@ def admin_users(request):
 
     qs = User.objects.annotate(
         order_count=Count("orders"),
-        total_spent=Sum("orders__total"),
+        total_spent=Sum("orders__total", filter=~Q(orders__status="Cancelled")),
     ).order_by("-date_joined")
 
     q = request.GET.get("q", "").strip()
@@ -432,7 +432,11 @@ def admin_users(request):
         uid = request.POST.get("user_id")
         toggle = request.POST.get("toggle")
         u = get_object_or_404(User, pk=uid)
-        if toggle == "staff":
+        if u.pk == request.user.pk:
+            messages.error(request, "You can't change your own account here, so you can't lock yourself out.")
+        elif u.is_superuser and toggle == "staff":
+            messages.error(request, "A superuser's staff flag can't be changed here.")
+        elif toggle == "staff":
             u.is_staff = not u.is_staff
             u.save(update_fields=["is_staff"])
             messages.success(request, f"Staff flag toggled for {u.username}.")
