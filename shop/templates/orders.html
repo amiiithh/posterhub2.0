@@ -5,15 +5,34 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
   <!-- Page header -->
-  <div class="mb-10">
+  <div class="mb-8">
     <span class="text-xs font-mono font-bold uppercase tracking-widest text-champagneMuted">Your Collection History</span>
     <h1 class="font-display font-extrabold text-3xl text-noir mt-1">MY ORDERS</h1>
+    {% if order_count %}
+    <p class="text-sm text-stone-500 mt-2">
+      {{ order_count }} order{{ order_count|pluralize }} &middot; ₹{{ total_spent }} spent
+      <span class="text-stone-400">(cancelled orders not counted)</span>
+    </p>
+    {% endif %}
   </div>
 
+  {% if order_count %}
+  <!-- Status filter -->
+  <div class="flex flex-wrap gap-2 mb-8" role="tablist" aria-label="Filter orders by status">
+    {% for value, label, count in tabs %}
+    <a href="{% if value %}?status={{ value }}{% else %}{% url 'orders' %}{% endif %}"
+       class="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors
+       {% if value == status %}bg-noir text-white border-noir{% else %}bg-white text-stone-600 border-stoneLine hover:border-noir{% endif %}">
+      {{ label }} <span class="{% if value == status %}text-stone-300{% else %}text-stone-400{% endif %} font-mono">{{ count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% if orders %}
-  <div class="space-y-5">
+  <div class="space-y-6">
     {% for o in orders %}
-    <div class="lift-on-scroll bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat overflow-hidden">
+    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat overflow-hidden">
 
       <!-- Order header bar -->
       <div class="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-stoneLine bg-plaster/50">
@@ -22,7 +41,6 @@
           <p class="text-[11px] text-stone-400 font-mono mt-0.5">{{ o.created|date:"d M Y, H:i" }} &nbsp;·&nbsp; {{ o.payment }}</p>
         </div>
         <div class="flex items-center gap-3">
-          <!-- Status badge -->
           <span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider
             {% if o.status == 'Processing' %}bg-amber-50 text-amber-700 border border-amber-200
             {% elif o.status == 'Shipped' %}bg-blue-50 text-blue-700 border border-blue-200
@@ -38,36 +56,83 @@
         </div>
       </div>
 
+      <!-- Progress tracker -->
+      <div class="px-6 pt-5">
+        {% if o.timeline %}
+        <ol class="flex items-center" aria-label="Order progress">
+          {% for s in o.timeline %}
+          <li class="flex items-center {% if not forloop.last %}flex-1{% endif %}">
+            <span class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold
+                {% if s.state == 'done' %}bg-emerald-500 text-white{% elif s.state == 'current' %}bg-noir text-white{% else %}bg-stone-200 text-stone-500{% endif %}">
+                {% if s.state == 'done' %}<i class="fa-solid fa-check"></i>{% else %}{{ forloop.counter }}{% endif %}
+              </span>
+              <span class="text-[11px] font-semibold {% if s.state == 'todo' %}text-stone-400{% else %}text-noir{% endif %}">{{ s.label }}</span>
+            </span>
+            {% if not forloop.last %}<span class="flex-1 h-px mx-3 {% if s.state == 'done' %}bg-emerald-400{% else %}bg-stoneLine{% endif %}"></span>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="text-xs text-red-600 font-semibold"><i class="fa-solid fa-ban mr-1"></i>This order was cancelled.</p>
+        {% endif %}
+      </div>
+
       <!-- Order items -->
       <div class="px-6 py-5">
         <div class="space-y-3">
           {% for i in o.items.all %}
           <div class="flex items-center gap-4">
-            <!-- Mini poster thumbnail -->
             <div class="w-12 h-16 shrink-0 bg-stone-200 rounded overflow-hidden border border-stoneLine">
               {% if i.poster and i.poster.image %}
-              <img src="{{ i.poster.image.url }}" alt="{{ i.poster.title }}" class="w-full h-full object-cover">
+              <img src="{{ i.poster.image.url }}" alt="{{ i.display_title }}" class="w-full h-full object-cover">
               {% else %}
-              <div class="w-full h-full flex items-center justify-center">
-                <i class="fa-solid fa-image text-stone-300 text-sm"></i>
-              </div>
+              <div class="w-full h-full flex items-center justify-center"><i class="fa-solid fa-image text-stone-300 text-sm"></i></div>
               {% endif %}
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-display font-bold text-sm text-noir">{{ i.poster.title|default:"[Deleted poster]" }}</p>
+              {% if i.poster and i.poster.is_active %}
+              <a href="{% url 'detail' i.poster_id %}" class="font-display font-bold text-sm text-noir hover:underline">{{ i.display_title }}</a>
+              {% else %}
+              <p class="font-display font-bold text-sm text-noir">{{ i.display_title }}</p>
+              {% endif %}
               <p class="text-[11px] text-stone-500 font-mono mt-0.5">
                 <span class="px-1.5 py-0.5 bg-plaster border border-stoneLine rounded text-[10px] font-bold mr-1">{{ i.size }}</span>
-                × {{ i.qty }}
+                {{ i.qty }} &times; ₹{{ i.price }}
               </p>
             </div>
-            <p class="font-display font-semibold text-sm text-noir whitespace-nowrap">₹{{ i.price }}</p>
+            <p class="font-display font-semibold text-sm text-noir whitespace-nowrap">₹{{ i.subtotal }}</p>
           </div>
           {% endfor %}
         </div>
 
-        <!-- Cancel button -->
-        {% if o.status == "Processing" %}
-        <div class="mt-5 pt-4 border-t border-stoneLine">
+        <!-- Shipping and price breakdown -->
+        <div class="grid sm:grid-cols-2 gap-6 mt-5 pt-5 border-t border-stoneLine text-sm">
+          <div>
+            <p class="text-[11px] font-mono uppercase tracking-widest text-stone-400 mb-1.5">Shipping to</p>
+            <p class="font-semibold text-noir">{{ o.name }}</p>
+            <p class="text-stone-600 whitespace-pre-line">{{ o.address }}</p>
+            <p class="text-stone-600">{{ o.phone }}</p>
+          </div>
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-stone-600"><span>Subtotal</span><span>₹{{ o.items_subtotal }}</span></div>
+            {% if o.discount_amount %}
+            <div class="flex justify-between text-emerald-700">
+              <span>Discount{% if o.coupon_code %} ({{ o.coupon_code }}){% endif %}</span><span>&minus;₹{{ o.discount_amount }}</span>
+            </div>
+            {% endif %}
+            <div class="flex justify-between pt-2 border-t border-stoneLine font-display font-extrabold text-noir"><span>Total</span><span>₹{{ o.total }}</span></div>
+            <p class="text-[11px] text-stone-400 font-mono pt-1">Paid by: {{ o.payment }}</p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-5 pt-4 border-t border-stoneLine flex flex-wrap items-center gap-3">
+          <a href="{% url 'invoice' o.pk %}"
+             class="px-4 py-2 bg-noir text-white text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-all">
+            <i class="fa-solid fa-file-invoice mr-1.5"></i>View invoice
+          </a>
+          {% if o.status == "Processing" %}
           <form method="post" action="{% url 'cancel' o.pk %}">
             {% csrf_token %}
             <button id="cancel-order-{{ o.pk }}" type="submit"
@@ -76,12 +141,26 @@
               <i class="fa-solid fa-xmark mr-1.5"></i>Cancel Order
             </button>
           </form>
+          {% endif %}
         </div>
-        {% endif %}
       </div>
-
     </div>
     {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-10 flex flex-wrap items-center justify-center gap-2" aria-label="Pagination">
+    {% if page_obj.has_previous %}<a href="?{% if page_qs %}{{ page_qs }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded border border-stoneLine bg-white text-xs font-bold text-stone-600 hover:border-noir">&larr; Newer</a>{% endif %}
+    <span class="px-3 py-1.5 text-xs font-mono text-stone-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?{% if page_qs %}{{ page_qs }}&amp;{% endif %}page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded border border-stoneLine bg-white text-xs font-bold text-stone-600 hover:border-noir">Older &rarr;</a>{% endif %}
+  </nav>
+  {% endif %}
+
+  {% elif order_count %}
+  <!-- Nothing in this status -->
+  <div class="text-center py-20">
+    <p class="text-stone-500 text-sm mb-4">You have no {{ status|lower }} orders.</p>
+    <a href="{% url 'orders' %}" class="inline-block px-5 py-2.5 bg-noir text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all">Show all orders</a>
   </div>
 
   {% else %}

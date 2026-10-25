@@ -104,6 +104,28 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.pk}"
 
+    FLOW = ["Processing", "Shipped", "Delivered"]
+
+    @property
+    def invoice_number(self):
+        return f"PH-{self.pk:06d}"
+
+    @property
+    def items_subtotal(self):
+        """Sum of the order lines (uses prefetched items when available)."""
+        return sum(i.qty * i.price for i in self.items.all())
+
+    @property
+    def timeline(self):
+        """Progress steps for the status tracker; empty for a cancelled order."""
+        if self.status not in self.FLOW:
+            return []
+        at = self.FLOW.index(self.status)
+        return [
+            {"label": s, "state": "done" if (n < at or self.status == "Delivered") else "current" if n == at else "todo"}
+            for n, s in enumerate(self.FLOW)
+        ]
+
     TRANSITIONS = {
         "Processing": {"Shipped", "Cancelled"},
         "Shipped": {"Delivered", "Cancelled"},
@@ -148,12 +170,22 @@ class OrderItem(models.Model):
     poster = models.ForeignKey(
         Poster, on_delete=models.SET_NULL, null=True, related_name="order_items"
     )
+    title = models.CharField(max_length=120, blank=True, help_text="Poster title when the order was placed")
     size = models.CharField(max_length=3)
     qty = models.PositiveIntegerField()
     price = models.PositiveIntegerField()
 
     class Meta:
         indexes = [models.Index(fields=["order", "poster"])]
+
+    @property
+    def display_title(self):
+        """The title as ordered, so old orders stay readable if the poster is renamed or deleted."""
+        return self.title or (self.poster.title if self.poster_id else "") or "Poster no longer available"
+
+    @property
+    def subtotal(self):
+        return self.qty * self.price
 
 
 class Profile(models.Model):

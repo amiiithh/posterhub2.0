@@ -198,11 +198,11 @@
                     <div class="w-10 h-14 shrink-0 rounded-lg overflow-hidden border border-[#EAECF5]"
                          style="background:hsl({{ i.poster.hue }},60%,90%)">
                       {% if i.poster.image %}
-                      <img src="{{ i.poster.image.url }}" alt="{{ i.poster.title }}" class="w-full h-full object-cover">
+                      <img src="{{ i.poster.image.url }}" alt="{{ i.display_title }}" class="w-full h-full object-cover">
                       {% endif %}
                     </div>
                     <div class="min-w-0">
-                      <p class="font-semibold text-[#111] truncate">{{ i.poster.title }}</p>
+                      <p class="font-semibold text-[#111] truncate">{{ i.display_title }}</p>
                       <p class="text-[11px] text-[#8B92A9]">{{ i.poster.category }}</p>
                     </div>
                   </div>

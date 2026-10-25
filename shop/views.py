@@ -11,6 +11,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, Exists, F, OuterRef, Q, Sum
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from .cart import Cart
@@ -170,13 +171,27 @@ def _coupon_state(user, code, total):
         return None, 0, f"Coupon '{code}' gives ₹0 discount on your cart."
     return coupon, discount, ""
 
-def _send_confirmation(order, email):
+def _send_confirmation(order, email, invoice_url=""):
     if not email:
         return
+    lines = [f"  {i.display_title} ({i.size}) x {i.qty}: ₹{i.subtotal}" for i in order.items.all()]
+    body = [
+        f"Thanks {order.name}! Your order has been placed and is being processed.",
+        "",
+        f"Invoice {order.invoice_number}   Placed on {order.created:%d %b %Y, %H:%M}",
+        "",
+        "Items:", *lines, "",
+        f"Subtotal: ₹{order.items_subtotal}",
+    ]
+    if order.discount_amount:
+        body.append(f"Discount ({order.coupon_code or 'coupon'}): -₹{order.discount_amount}")
+    body += [f"Total: ₹{order.total}", f"Payment: {order.payment}", "", "Shipping to:", f"  {order.name}, {order.phone}", f"  {order.address}"]
+    if invoice_url:
+        body += ["", f"View your invoice: {invoice_url}"]
     try:
         send_mail(
             f"PosterHub order #{order.pk} confirmed",
-            f"Thanks {order.name}! Your order of ₹{order.total} is being processed.",
+            "\n".join(body),
             settings.DEFAULT_FROM_EMAIL, [email],
         )
     except Exception:   # a mail problem must never undo or break a placed order
@@ -226,15 +241,15 @@ def checkout(request):
                     coupon_code=coupon.code if coupon else "", discount_amount=discount,
                 )
                 OrderItem.objects.bulk_create([
-                    OrderItem(order=o, poster=i["poster"], size=i["size"], qty=i["qty"], price=i["price"]) for i in items
+                    OrderItem(order=o, poster=i["poster"], title=i["poster"].title, size=i["size"], qty=i["qty"], price=i["price"]) for i in items
                 ])
                 Cart(request).clear()   # inside the same transaction: a failed order keeps the Vault intact
                 if coupon:
                     Coupon.objects.filter(pk=coupon.pk).update(times_used=F("times_used") + 1)
             request.session.pop("coupon_code", None)
-            _send_confirmation(o, request.user.email)
-            messages.success(request, f"Order #{o.pk} placed successfully!")
-            return redirect("orders")
+            _send_confirmation(o, request.user.email, request.build_absolute_uri(reverse("invoice", args=[o.pk])))
+            messages.success(request, f"Order #{o.pk} placed successfully! Here is your invoice.")
+            return redirect("invoice", pk=o.pk)
     else:
         prof = Profile.objects.filter(user=request.user).first()
         form = CheckoutForm(initial={
@@ -249,9 +264,33 @@ def checkout(request):
         "discount": discount, "final_total": final_total, "form": form,
     })
 
+ORDERS_PER_PAGE = 10
+
 @login_required
 def orders(request):
-    return render(request, "orders.html", {"orders": request.user.orders.prefetch_related("items__poster").order_by("-created")})
+    mine = request.user.orders.all()
+    counts = {r["status"]: r["n"] for r in mine.values("status").annotate(n=Count("id"))}
+    status = request.GET.get("status", "")
+    qs = mine.prefetch_related("items__poster").order_by("-created", "-pk")
+    if status in dict(Order.STATUS):
+        qs = qs.filter(status=status)
+    else:
+        status = ""
+    page_obj = Paginator(qs, ORDERS_PER_PAGE).get_page(request.GET.get("page"))
+    return render(request, "orders.html", {
+        "orders": page_obj, "page_obj": page_obj, "status": status,
+        "page_qs": urlencode({"status": status}) if status else "",
+        "tabs": [("", "All", sum(counts.values()))] + [(s, s, counts.get(s, 0)) for s, _ in Order.STATUS],
+        "order_count": sum(counts.values()),
+        "total_spent": mine.exclude(status="Cancelled").aggregate(s=Sum("total"))["s"] or 0,
+    })
+
+@login_required
+def invoice(request, pk):
+    qs = Order.objects.select_related("user").prefetch_related("items__poster")
+    if not request.user.is_staff:
+        qs = qs.filter(user=request.user)   # customers only ever see their own invoices
+    return render(request, "invoice.html", {"order": get_object_or_404(qs, pk=pk)})
 
 @login_required
 @require_POST

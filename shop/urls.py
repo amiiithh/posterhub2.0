@@ -11,6 +11,7 @@ urlpatterns = [
     path("cart/update/", v.cart_update, name="cart_update"),
     path("checkout/", v.checkout, name="checkout"),
     path("orders/", v.orders, name="orders"),
+    path("orders/<int:pk>/invoice/", v.invoice, name="invoice"),
     path("orders/<int:pk>/cancel/", v.cancel, name="cancel"),
     path("wishlist/", v.wishlist, name="wishlist"),
     path("wishlist/toggle/<int:pk>/", v.wish_toggle, name="wish_toggle"),

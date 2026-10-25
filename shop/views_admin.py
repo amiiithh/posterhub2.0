@@ -220,9 +220,7 @@ def admin_order_detail(request, pk):
             (messages.warning if changed else messages.error)(request, f"Order #{pk} cancelled." if changed else msg)
             return redirect("admin_orders")
 
-    items = o.items.select_related("poster__category").annotate(
-        subtotal=ExpressionWrapper(F("qty") * F("price"), output_field=IntegerField())
-    ).order_by("size")
+    items = o.items.select_related("poster__category").order_by("size")   # OrderItem.subtotal is a property
 
     return render(
         request,

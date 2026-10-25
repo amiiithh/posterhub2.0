@@ -154,8 +154,8 @@ class CheckoutTests(Base):
     def test_valid_order_is_created(self):
         self.put_in_cart(self.p1, "A3", 2)          # 640 x 2
         r = self.checkout()
-        self.assertRedirects(r, reverse("orders"))
         o = Order.objects.get()
+        self.assertRedirects(r, reverse("invoice", args=[o.pk]))
         self.assertEqual((o.user, o.total, o.discount_amount, o.phone), (self.user, 1280, 0, "+919876543210"))
         item = o.items.get()
         self.assertEqual((item.poster, item.size, item.qty, item.price), (self.p1, "A3", 2, 640))
@@ -190,7 +190,9 @@ class CheckoutTests(Base):
         self.assertEqual(Order.objects.count(), 1)
         self.user.email = "buyer@example.com"; self.user.save(); self.put_in_cart()
         with mock.patch("shop.views.send_mail", side_effect=OSError("smtp down")):
-            self.assertRedirects(self.checkout(), reverse("orders"))
+            r = self.checkout()
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/invoice/", r["Location"])
         self.assertEqual(Order.objects.count(), 2)
 
     def test_failure_midway_leaves_no_partial_order(self):
@@ -882,4 +884,147 @@ class AccountVaultTests(Base):
         CartItem.objects.create(user=self.user, poster=self.p1, size="A4", qty=1)
         with self.assertRaises(IntegrityError), transaction.atomic():
             CartItem.objects.create(user=self.user, poster=self.p1, size="A4", qty=1)
+
+
+class InvoiceAndOrderHistoryTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.login()
+
+    def place(self, poster=None, size="A3", qty=2, coupon_code=""):
+        """Place a real order through checkout and return it."""
+        self.put_in_cart(poster or self.p1, size, qty)
+        if coupon_code:
+            self.client.post(reverse("checkout"), {"action": "apply_coupon", "coupon_code": coupon_code})
+        self.client.post(reverse("checkout"), GOOD_CHECKOUT)
+        return Order.objects.filter(user=self.user).latest("pk")
+
+    def invoice(self, order, client=None):
+        return (client or self.client).get(reverse("invoice", args=[order.pk]))
+
+    # ---- invoice
+    def test_checkout_lands_on_the_invoice_with_everything_on_it(self):
+        self.put_in_cart(self.p1, "A3", 2)
+        r = self.client.post(reverse("checkout"), GOOD_CHECKOUT, follow=True)
+        o = Order.objects.get()
+        self.assertEqual(r.redirect_chain[-1][0], reverse("invoice", args=[o.pk]))
+        for text in (o.invoice_number, "Alpha", "A3", "₹640", "₹1280", "Test User", "12 MG Road", "+919876543210",
+                     "buyer@example.com", "Cash on delivery", "Pay ₹1280 in cash"):
+            self.assertContains(r, text)
+
+    def test_invoice_shows_the_coupon_discount(self):
+        Coupon.objects.create(code="TEN", title="t", kind="percent", value=10)
+        o = self.place(coupon_code="TEN")
+        self.assertEqual((o.discount_amount, o.total), (128, 1152))
+        r = self.invoice(o)
+        for text in ("Subtotal", "₹1280", "Discount (TEN)", "₹128", "₹1152"):
+            self.assertContains(r, text)
+
+    def test_only_the_owner_or_staff_can_open_an_invoice(self):
+        o = self.place()
+        self.assertEqual(self.invoice(o).status_code, 200)
+        other = Client(); other.force_login(self.other)
+        self.assertEqual(self.invoice(o, other).status_code, 404)
+        self.assertEqual(self.invoice(o, Client()).status_code, 302)          # signed out: sent to log in
+        boss = Client(); boss.force_login(self.staff)
+        self.assertEqual(self.invoice(o, boss).status_code, 200)
+
+    def test_cancelled_order_invoice_says_so(self):
+        o = self.place(); o.change_status("Cancelled")
+        self.assertContains(self.invoice(o), "This order was cancelled")
+
+    def test_invoice_keeps_the_title_if_the_poster_is_renamed_or_deleted(self):
+        o = self.place()
+        self.assertEqual(o.items.get().title, "Alpha")
+        Poster.objects.filter(pk=self.p1.pk).update(title="Renamed")
+        self.assertContains(self.invoice(o), "Alpha")
+        self.assertNotContains(self.invoice(o), "Renamed")
+        self.p1.delete()
+        self.assertIsNone(o.items.get().poster)
+        self.assertContains(self.invoice(o), "Alpha")
+        self.assertContains(self.client.get(reverse("orders")), "Alpha")
+
+    def test_old_line_without_a_saved_title_still_reads_well(self):
+        o = Order.objects.create(user=self.user, name="n", address="a", phone="12345678", payment="Cash on delivery", total=5)
+        item = OrderItem.objects.create(order=o, poster=self.p2, size="A4", qty=1, price=5)
+        self.assertEqual(item.display_title, "Beta")                       # falls back to the poster's title
+        self.p2.delete()
+        item.refresh_from_db()
+        self.assertEqual(item.display_title, "Poster no longer available")
+
+    def test_confirmation_email_carries_the_invoice_details(self):
+        Coupon.objects.create(code="TEN", title="t", kind="percent", value=10)
+        o = self.place(coupon_code="TEN")
+        body = mail.outbox[-1].body
+        for text in (o.invoice_number, "Alpha (A3) x 2: ₹1280", "Subtotal: ₹1280", "Discount (TEN): -₹128",
+                     "Total: ₹1152", "Cash on delivery", f"/orders/{o.pk}/invoice/"):
+            self.assertIn(text, body)
+
+    # ---- order history
+    def test_orders_page_shows_full_details(self):
+        Coupon.objects.create(code="TEN", title="t", kind="percent", value=10)
+        o = self.place(coupon_code="TEN")
+        r = self.client.get(reverse("orders"))
+        for text in (f"Order #{o.pk}", "Alpha", "2 &times; ₹640", "Shipping to", "Test User", "12 MG Road",
+                     "Subtotal", "Discount (TEN)", "₹1152", "Cash on delivery", reverse("invoice", args=[o.pk]),
+                     f"cancel-order-{o.pk}"):
+            self.assertContains(r, text)
+
+    def test_progress_tracker_follows_the_status(self):
+        o = self.place()
+        states = lambda: [s["state"] for s in Order.objects.get(pk=o.pk).timeline]
+        self.assertEqual(states(), ["current", "todo", "todo"])
+        o.change_status("Shipped"); self.assertEqual(states(), ["done", "current", "todo"])
+        o.change_status("Delivered"); self.assertEqual(states(), ["done", "done", "done"])
+        c = self.place(); c.change_status("Cancelled")
+        self.assertEqual(Order.objects.get(pk=c.pk).timeline, [])
+        self.assertContains(self.client.get(reverse("orders")), "This order was cancelled")
+
+    def test_cancel_button_only_while_processing(self):
+        o = self.place()
+        self.assertContains(self.client.get(reverse("orders")), f"cancel-order-{o.pk}")
+        o.change_status("Shipped")
+        self.assertNotContains(self.client.get(reverse("orders")), f"cancel-order-{o.pk}")
+
+    def test_only_my_orders_newest_first_and_cancelled_not_counted_as_spent(self):
+        first = self.place(qty=1)                      # 640
+        second = self.place(self.p2, "A4", 1)          # 500
+        third = self.place(qty=1); third.change_status("Cancelled")
+        theirs = Order.objects.create(user=self.other, name="x", address="y", phone="12345678", payment="Cash on delivery", total=99)
+        r = self.client.get(reverse("orders"))
+        self.assertEqual([o.pk for o in r.context["orders"]], [third.pk, second.pk, first.pk])
+        self.assertNotIn(theirs.pk, [o.pk for o in r.context["orders"]])
+        self.assertEqual((r.context["order_count"], r.context["total_spent"]), (3, 1140))
+
+    def test_status_filter_and_tab_counts(self):
+        a = self.place(); b = self.place(); b.change_status("Shipped"); c = self.place(); c.change_status("Cancelled")
+        r = self.client.get(reverse("orders"), {"status": "Shipped"})
+        self.assertEqual([o.pk for o in r.context["orders"]], [b.pk])
+        self.assertEqual([(v, n) for v, _, n in r.context["tabs"]], [("", 3), ("Processing", 1), ("Shipped", 1), ("Delivered", 0), ("Cancelled", 1)])
+        self.assertEqual(len(self.client.get(reverse("orders"), {"status": "nonsense"}).context["orders"]), 3)
+        self.assertContains(self.client.get(reverse("orders"), {"status": "Delivered"}), "no delivered orders")
+
+    def test_orders_are_paginated(self):
+        for _ in range(12):
+            Order.objects.create(user=self.user, name="n", address="a", phone="12345678", payment="Cash on delivery", total=1)
+        r = self.client.get(reverse("orders"))
+        self.assertEqual(len(r.context["orders"]), 10)
+        self.assertEqual(len(self.client.get(reverse("orders"), {"page": 2}).context["orders"]), 2)
+        self.assertEqual(self.client.get(reverse("orders"), {"page": 999}).status_code, 200)
+        self.assertEqual(self.client.get(reverse("orders"), {"status": "Processing"}).context["page_qs"], "status=Processing")
+
+    def test_orders_page_needs_login_and_handles_no_orders(self):
+        self.assertContains(self.client.get(reverse("orders")), "No orders yet")
+        self.assertEqual(Client().get(reverse("orders")).status_code, 302)
+
+    def test_staff_order_page_uses_the_saved_title(self):
+        o = self.place(); self.p1.delete()
+        self.login(self.staff)
+        self.assertContains(self.client.get(reverse("admin_order_detail", args=[o.pk])), "Alpha")
+
+    def test_model_helpers(self):
+        o = self.place(size="A3", qty=2)
+        self.assertEqual(o.invoice_number, f"PH-{o.pk:06d}")
+        self.assertEqual(o.items_subtotal, 1280)
+        self.assertEqual(o.items.get().subtotal, 1280)
 

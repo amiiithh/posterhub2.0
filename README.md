@@ -9,7 +9,9 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 - Poster pages with A4, A3 and A2 sizes (priced from one base price), specs and reviews
 - The Vault (cart) belongs to your account: it is saved in the database, follows you to any browser or device, and is never shown to the next person who uses the same computer (signing out clears the browser). Items added before signing in are merged into your Vault when you sign in. Also a wishlist and a checkout form (Cash on delivery or simulated online payment)
 - Coupons (percentage or flat, with minimum order, usage limit, expiry and an optional first-order-only rule)
-- Order history with cancellation, an order confirmation email (sign-up asks for an email address) and a customer profile with saved address
+- After checkout the customer lands on an invoice (invoice number, items, coupon discount, totals, payment method and shipping details) that can be printed or saved as PDF, and the same details are emailed (sign-up asks for an email address)
+- Order history shows each order with a progress tracker (Processing, Shipped, Delivered), its items with pictures, price breakdown, shipping address and a link to the invoice, with a status filter, paging and cancellation while an order is Processing. Poster titles are saved on each order line, so old orders and invoices stay correct even if a poster is renamed or deleted
+- A customer profile with a saved address
 - Checkout, cart and review forms are validated, and an order is saved all-or-nothing, so a failure never leaves a half-created order
 - The shop grid is paginated (12 posters per page)
 - Uploaded poster images are resized (longest side 1400 px) and compressed automatically; uploads over 10 MB are refused
@@ -168,7 +170,8 @@ The suite uses a temporary database, so it never touches your data. It covers th
 |---|---|
 | `/` | Home page |
 | `/register/`, `/accounts/login/` | Sign up and log in |
-| `/cart/`, `/checkout/`, `/orders/` | Shopping flow |
+| `/cart/`, `/checkout/`, `/orders/` | Shopping flow and order history |
+| `/orders/<id>/invoice/` | Printable invoice (the customer who placed it, or staff) |
 | `/wishlist/`, `/profile/` | Customer pages |
 | `/manage/dashboard/` | Staff panel (staff users only) |
 | `/admin/` | Django admin |
