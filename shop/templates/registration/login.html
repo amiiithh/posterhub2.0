@@ -2,62 +2,167 @@
 {% block title %}Sign In — PosterHub{% endblock %}
 
 {% block content %}
-<div class="min-h-[80vh] flex items-center justify-center px-4 py-16">
-  <div class="w-full max-w-md">
+<div class="min-h-[80vh] flex items-center justify-center px-4 py-10 sm:py-16">
+  <div class="w-full max-w-5xl grid lg:grid-cols-2 bg-galleryWhite border border-stoneLine rounded-2xl gallery-shadow-elevated overflow-hidden">
 
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-galleryWhite border border-stoneLine shadow-sm mb-4">
-        <span class="w-2 h-2 rounded-full bg-champagne animate-pulse"></span>
-        <span class="text-[11px] font-semibold uppercase tracking-widest text-stone-500">Member Access</span>
+    <!-- Brand panel (large screens only, purely decorative) -->
+    <aside class="hidden lg:flex relative flex-col justify-between bg-noir text-alabaster p-10 overflow-hidden" aria-hidden="true">
+      <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-champagne/20 blur-3xl"></div>
+
+      <div class="relative flex items-center gap-3">
+        <div class="w-9 h-9 bg-alabaster text-noir flex items-center justify-center font-display font-bold text-lg rounded-sm">P</div>
+        <span class="font-display font-extrabold tracking-tight text-lg">POSTERHUB</span>
       </div>
-      <h1 class="font-display font-extrabold text-3xl text-noir tracking-tight mb-2">Welcome back</h1>
-      <p class="text-stone-500 text-sm">Sign in to your PosterHub account</p>
-    </div>
 
-    <!-- Card -->
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-elevated p-8">
-      <form method="post" id="login-form">
+      <div class="relative">
+        <h2 class="font-display font-extrabold text-4xl leading-tight tracking-tight">Welcome<br>back.</h2>
+        <p class="text-stone-400 text-sm leading-relaxed mt-4 max-w-xs">
+          Your Vault, wishlist and order history are saved to your account, ready on any device.
+        </p>
+      </div>
+
+      <!-- A small gallery wall -->
+      <div class="relative h-56 mt-8">
+        <div class="absolute left-2 top-10 w-28 h-40 bg-white p-1.5 shadow-2xl" style="transform: rotate(-6deg)">
+          <div class="w-full h-full relative overflow-hidden" style="background: linear-gradient(160deg,#f3d9a4,#d4893a 55%,#7a2e2e)">
+            <div class="absolute left-1/2 top-[28%] w-10 h-10 -ml-5 rounded-full" style="background:#fff3d6; opacity:.85"></div>
+          </div>
+        </div>
+        <div class="absolute left-1/2 -ml-16 top-0 w-32 h-44 bg-white p-1.5 shadow-2xl" style="transform: rotate(2deg)">
+          <div class="w-full h-full" style="background: repeating-linear-gradient(90deg,#1f2a44 0 14px,#2c4470 14px 28px)"></div>
+        </div>
+        <div class="absolute right-2 top-12 w-28 h-40 bg-white p-1.5 shadow-2xl" style="transform: rotate(7deg)">
+          <div class="w-full h-full" style="background: radial-gradient(circle at 50% 42%,#efe9dc 0 20%,#b9ab88 21% 44%,#2d2d2d 45%)"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sign-in form -->
+    <section class="p-6 sm:p-10 lg:p-14 flex flex-col justify-center">
+
+      <div class="lg:hidden flex items-center gap-3 mb-8">
+        <div class="w-9 h-9 bg-noir text-alabaster flex items-center justify-center font-display font-bold text-lg rounded-sm">P</div>
+        <span class="font-display font-extrabold tracking-tight text-lg text-noir">POSTERHUB</span>
+      </div>
+
+      <h1 class="font-display font-extrabold text-3xl text-noir tracking-tight">Sign in</h1>
+      <p class="text-stone-500 text-sm mt-2 mb-8">Enter your details to open your Vault, wishlist and orders.</p>
+
+      {% if next %}
+      <div class="mb-6 px-4 py-3 bg-plaster border border-stoneLine rounded text-xs text-stone-600">
+        <i class="fa-solid fa-lock mr-2 text-champagneMuted"></i>Please sign in to continue.
+      </div>
+      {% endif %}
+
+      {% if form.non_field_errors %}
+      <div class="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm" role="alert">
+        <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ form.non_field_errors|join:' ' }}
+      </div>
+      {% endif %}
+
+      <form method="post" id="login-form" class="space-y-5">
         {% csrf_token %}
-        {% for field in form %}
-        <div class="mb-5">
-          <label for="{{ field.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">
-            {{ field.label }}
-          </label>
-          <input
-            id="{{ field.id_for_label }}"
-            name="{{ field.html_name }}"
-            type="{{ field.field.widget.input_type }}"
-            {% if field.value %}value="{{ field.value }}"{% endif %}
-            autocomplete="{{ field.html_name }}"
-            class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all"
-            placeholder="{{ field.label }}"
-          >
-          {% if field.errors %}
-          <p class="mt-1.5 text-red-600 text-xs font-medium">{{ field.errors|join:', ' }}</p>
-          {% endif %}
-        </div>
-        {% endfor %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
-        {% if form.non_field_errors %}
-        <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-          <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ form.non_field_errors|join:' ' }}
+        <!-- Username -->
+        <div>
+          <label for="{{ form.username.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">Username</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-stone-400"><i class="fa-solid fa-user text-sm"></i></span>
+            <input id="{{ form.username.id_for_label }}" name="username" type="text" value="{{ form.username.value|default:'' }}"
+              required autofocus maxlength="150" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+              placeholder="Your username"
+              {% if form.username.errors %}aria-invalid="true" aria-describedby="username-error"{% endif %}
+              class="w-full pl-11 pr-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all">
+          </div>
+          {% for e in form.username.errors %}<p id="username-error" class="mt-1.5 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
         </div>
-        {% endif %}
+
+        <!-- Password -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label for="{{ form.password.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500">Password</label>
+            <a href="{% url 'password_reset' %}" class="text-[11px] font-semibold text-stone-500 hover:text-noir underline underline-offset-4 transition-colors">Forgot password?</a>
+          </div>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-stone-400"><i class="fa-solid fa-lock text-sm"></i></span>
+            <input id="{{ form.password.id_for_label }}" name="password" type="password"
+              required autocomplete="current-password" placeholder="Your password"
+              {% if form.password.errors %}aria-invalid="true" aria-describedby="password-error"{% endif %}
+              class="w-full pl-11 pr-24 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all">
+            <button type="button" id="toggle-password" aria-controls="{{ form.password.id_for_label }}" aria-pressed="false" aria-label="Show password"
+              class="absolute inset-y-0 right-0 px-4 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:text-noir rounded-r focus:outline-none focus-visible:ring-2 focus-visible:ring-noir transition-colors">
+              <i id="toggle-password-icon" class="fa-regular fa-eye"></i><span id="toggle-password-text">Show</span>
+            </button>
+          </div>
+          <p id="caps-warning" class="hidden mt-1.5 text-amber-700 text-xs font-medium" aria-live="polite">
+            <i class="fa-solid fa-triangle-exclamation mr-1"></i>Caps Lock is on
+          </p>
+          {% for e in form.password.errors %}<p id="password-error" class="mt-1.5 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
 
         <button id="signin-btn" type="submit"
-          class="w-full py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all shadow-md mt-2 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+          class="w-full py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2">
+          <span id="signin-label">Sign in</span><i class="fa-solid fa-arrow-right text-[10px]"></i>
         </button>
       </form>
-    </div>
 
-    <!-- Footer link -->
-    <p class="text-center text-stone-500 text-sm mt-6">
-      New to PosterHub?
-      <a href="{% url 'register' %}" class="text-noir font-bold hover:underline underline-offset-4 transition-all ml-1">Create an account →</a>
-    </p>
-
+      <div class="mt-8 pt-6 border-t border-stoneLine text-center text-sm text-stone-500">
+        New to PosterHub?
+        <a href="{% url 'register' %}" class="text-noir font-bold hover:underline underline-offset-4 transition-all ml-1">Create an account <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </section>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var form = document.getElementById('login-form');
+  var input = document.getElementById('id_password');
+  var toggle = document.getElementById('toggle-password');
+  var icon = document.getElementById('toggle-password-icon');
+  var text = document.getElementById('toggle-password-text');
+  var caps = document.getElementById('caps-warning');
+  var submit = document.getElementById('signin-btn');
+  var label = document.getElementById('signin-label');
+  if (!form || !input || !toggle) return;
+
+  function setVisible(show) {
+    input.type = show ? 'text' : 'password';
+    toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+    toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    text.textContent = show ? 'Hide' : 'Show';
+    icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+
+  toggle.addEventListener('click', function () {
+    var start = input.selectionStart, end = input.selectionEnd;
+    setVisible(input.type === 'password');
+    input.focus();
+    try { input.setSelectionRange(start, end); } catch (e) {}
+  });
+
+  function checkCaps(e) {
+    if (e.getModifierState) caps.classList.toggle('hidden', !e.getModifierState('CapsLock'));
+  }
+  input.addEventListener('keydown', checkCaps);
+  input.addEventListener('keyup', checkCaps);
+  input.addEventListener('blur', function () { caps.classList.add('hidden'); });
+
+  form.addEventListener('submit', function () {
+    setVisible(false);                 // never leave the password showing once it is sent
+    submit.disabled = true;
+    label.textContent = 'Signing in…';
+  });
+
+  // Coming back with the Back button: start from a clean, hidden state
+  window.addEventListener('pageshow', function () {
+    setVisible(false);
+    submit.disabled = false;
+    label.textContent = 'Sign in';
+  });
+})();
+</script>
 {% endblock %}

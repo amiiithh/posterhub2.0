@@ -1028,3 +1028,48 @@ class InvoiceAndOrderHistoryTests(Base):
         self.assertEqual(o.items_subtotal, 1280)
         self.assertEqual(o.items.get().subtotal, 1280)
 
+
+class LoginPageTests(Base):
+    URL = "/accounts/login/"
+
+    def test_page_has_the_new_form_with_a_show_password_button(self):
+        r = self.client.get(self.URL)
+        self.assertEqual(r.status_code, 200)
+        for text in ('id="login-form"', 'id="toggle-password"', 'aria-controls="id_password"',
+                     'aria-pressed="false"', 'aria-label="Show password"', 'type="password"',
+                     "Forgot password?", reverse("password_reset"), "Create an account", reverse("register")):
+            self.assertContains(r, text)
+        self.assertNotContains(r, "Please sign in to continue")
+
+    def test_destination_is_kept_and_followed(self):
+        r = self.client.get(self.URL, {"next": "/orders/"})
+        self.assertContains(r, '<input type="hidden" name="next" value="/orders/">', html=True)
+        self.assertContains(r, "Please sign in to continue")
+        done = self.client.post(self.URL, {"username": "buyer", "password": PW, "next": "/orders/"})
+        self.assertRedirects(done, "/orders/", fetch_redirect_response=False)
+
+    def test_unsafe_destination_is_ignored(self):
+        done = self.client.post(self.URL, {"username": "buyer", "password": PW, "next": "http://evil.example/steal"})
+        self.assertRedirects(done, "/", fetch_redirect_response=False)
+
+    def test_plain_sign_in_goes_home(self):
+        self.assertRedirects(self.client.post(self.URL, {"username": "buyer", "password": PW}), "/", fetch_redirect_response=False)
+
+    def test_wrong_password_keeps_the_username_but_never_prints_the_password(self):
+        secret = "Sup3r-Secret-Typo-99"
+        r = self.client.post(self.URL, {"username": "buyer", "password": secret})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'value="buyer"')
+        self.assertContains(r, "Please enter a correct username and password")
+        self.assertNotContains(r, secret)
+
+    def test_empty_form_shows_field_errors(self):
+        r = self.client.post(self.URL, {"username": "", "password": ""})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "This field is required.", count=2)
+
+    def test_deactivated_account_gets_a_clear_message(self):
+        User.objects.filter(pk=self.user.pk).update(is_active=False)
+        r = self.client.post(self.URL, {"username": "buyer", "password": PW})
+        self.assertContains(r, "Please enter a correct username and password")   # Django treats it as a failed login
+

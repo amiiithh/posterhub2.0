@@ -12,6 +12,7 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 - After checkout the customer lands on an invoice (invoice number, items, coupon discount, totals, payment method and shipping details) that can be printed or saved as PDF, and the same details are emailed (sign-up asks for an email address)
 - Order history shows each order with a progress tracker (Processing, Shipped, Delivered), its items with pictures, price breakdown, shipping address and a link to the invoice, with a status filter, paging and cancellation while an order is Processing. Poster titles are saved on each order line, so old orders and invoices stay correct even if a poster is renamed or deleted
 - A customer profile with a saved address
+- A redesigned sign-in page with a Show/Hide password button, a Caps Lock warning, a "Forgot password?" link, and it takes you back to the page you were trying to reach. The password is never printed back into the page after a failed attempt
 - Checkout, cart and review forms are validated, and an order is saved all-or-nothing, so a failure never leaves a half-created order
 - The shop grid is paginated (12 posters per page)
 - Uploaded poster images are resized (longest side 1400 px) and compressed automatically; uploads over 10 MB are refused
@@ -44,7 +45,8 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 git clone https://github.com/amiiithh/posterhub2.0.git
 cd posterhub2.0
 py -m venv venv                  # Windows (use the python.org Python)
-kk# python3 -m venv venv           # macOS / Linux
+venv\Scripts\activate
+# python3 -m venv venv           # macOS / Linux
 # source venv/bin/activate
 pip install -r requirements.txt
 ```
