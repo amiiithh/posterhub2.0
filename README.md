@@ -44,8 +44,7 @@ An online poster store built with **Python**, **Django** and **PostgreSQL**. Cus
 git clone https://github.com/amiiithh/posterhub2.0.git
 cd posterhub2.0
 py -m venv venv                  # Windows (use the python.org Python)
-venv\Scripts\activate
-# python3 -m venv venv           # macOS / Linux
+kk# python3 -m venv venv           # macOS / Linux
 # source venv/bin/activate
 pip install -r requirements.txt
 ```
