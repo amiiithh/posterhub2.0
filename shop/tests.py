@@ -433,7 +433,7 @@ class HomePageTests(Base):
 
     def test_no_invented_claims_and_real_promo_and_rating(self):
         html = self.client.get(reverse("home")).content.decode()
-        for fake in ("43,000", "Buy 4 Get 3", "4.9/5"):
+        for fake in ("43,000", "Buy 4 Get 3", "4.9/5", "60,000+", "The Printworks Club", "Request Exclusive Invite"):
             self.assertNotIn(fake, html)
         self.assertNotIn("Use code", html)
         cache.clear()
@@ -442,6 +442,17 @@ class HomePageTests(Base):
         html = self.client.get(reverse("home")).content.decode()
         self.assertIn("Use code SAVE10", html)
         self.assertIn("Rated 4.0/5 from 1 customer review", html)
+
+    def test_search_scrolls_to_search_results(self):
+        home_url = reverse("home")
+        r_idle = self.client.get(home_url)
+        self.assertContains(r_idle, f'id="nav-search-form"')
+        self.assertContains(r_idle, f'action="{home_url}#search-results"')
+        self.assertContains(r_idle, 'id="search-results"')
+        self.assertNotContains(r_idle, "target.scrollIntoView")
+
+        r_search = self.client.get(home_url, {"q": self.p1.title})
+        self.assertContains(r_search, "target.scrollIntoView")
 
 
 class RegistrationEmailTests(Base):

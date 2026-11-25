@@ -173,7 +173,7 @@
 </section>
 
 <!-- Single Prints Shop -->
-<section class="py-20 bg-galleryWhite border-b border-stoneLine" id="shop">
+<section class="py-20 bg-galleryWhite border-b border-stoneLine scroll-mt-20" id="shop">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-10 pb-4 border-b border-stoneLine">
@@ -193,8 +193,9 @@
       </form>
     </div>
 
-    <!-- Search/sort bar -->
-    <form method="get" id="search-form" class="flex gap-3 mb-10 items-center bg-plaster/80 border border-stoneLine rounded-full px-4 py-2">
+    <!-- Search/sort bar & results -->
+    <div id="search-results" class="scroll-mt-24">
+    <form method="get" action="{% url 'home' %}#search-results" id="search-form" class="flex gap-3 mb-10 items-center bg-plaster/80 border border-stoneLine rounded-full px-4 py-2">
       {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
       <i class="fa-solid fa-magnifying-glass text-stone-400 text-xs"></i>
       <input name="q" value="{{ q|default:'' }}" class="flex-1 bg-transparent border-none text-xs text-noir placeholder-stone-400 focus:outline-none" placeholder="Search posters, artists, themes…"/>
@@ -260,6 +261,7 @@
       <a href="{% url 'home' %}" class="mt-4 inline-block px-5 py-2 bg-noir text-white text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-stone-800 transition-colors">View All Prints</a>
     </div>
     {% endif %}
+    </div>
   </div>
 </section>
 
@@ -710,4 +712,12 @@
     });
   });
 </script>
+{% if q %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var target = document.getElementById('search-results');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+</script>
+{% endif %}
 {% endblock %}

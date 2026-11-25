@@ -174,7 +174,7 @@
         </nav>
       </div>
       <!-- Search -->
-      <form method="get" action="{% url 'home' %}" class="hidden md:flex items-center flex-1 max-w-sm mx-8">
+      <form method="get" action="{% url 'home' %}#search-results" id="nav-search-form" class="hidden md:flex items-center flex-1 max-w-sm mx-8">
         <div class="relative w-full">
           <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
           <input name="q" value="{{ q|default:'' }}" class="w-full pl-9 pr-4 py-2 bg-plaster/80 border border-stoneLine rounded-full text-xs text-noir placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-noir focus:bg-galleryWhite transition-all" placeholder="Search posters, artists, themes…"/>
@@ -217,7 +217,7 @@
 <!-- Footer -->
 <footer class="bg-noir text-stone-400 pt-16 pb-12 border-t border-charcoal/40 text-xs">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-14 border-b border-charcoal/60">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-14 border-b border-charcoal/60">
       <div class="lg:col-span-2">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-8 h-8 bg-galleryWhite text-noir flex items-center justify-center font-display font-bold text-lg rounded-sm">P</div>
@@ -255,14 +255,6 @@
           <li><a href="{% url 'register' %}" class="hover:text-white transition-colors">Register</a></li>
           {% endif %}
         </ul>
-      </div>
-      <div>
-        <h4 class="font-display font-bold text-white uppercase tracking-wider text-xs mb-4">The Printworks Club</h4>
-        <p class="text-[11px] text-stone-400 mb-3">Join 60,000+ members receiving weekly drop links and 15% off first order.</p>
-        <div class="space-y-2">
-          <input class="w-full px-3 py-2 bg-obsidian border border-charcoal rounded text-xs text-white placeholder-stone-500 focus:outline-none focus:border-champagne" placeholder="Enter your email address" type="email"/>
-          <button class="w-full py-2 bg-champagne text-noir font-bold text-[11px] uppercase tracking-wider rounded hover:bg-champagneMuted transition-colors">Request Exclusive Invite</button>
-        </div>
       </div>
     </div>
     <div class="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-stone-500">
