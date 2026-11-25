@@ -1124,10 +1124,15 @@ class ProfilePasswordChangeTests(Base):
         super().setUp()
         self.client.login(username="buyer", password=PW)
 
-    def test_profile_page_renders_change_password_form_with_visibility_toggles(self):
+    def test_profile_page_renders_change_password_option_and_hidden_modal(self):
         r = self.client.get(self.URL)
         self.assertEqual(r.status_code, 200)
         for text in (
+            'id="open-password-modal"',
+            'aria-controls="change-password-modal"',
+            'id="change-password-modal"',
+            'role="dialog"',
+            'aria-modal="true"',
             'id="password-change-form"',
             'name="action" value="change_password"',
             'id="toggle-old-password"',
@@ -1139,6 +1144,7 @@ class ProfilePasswordChangeTests(Base):
             'Update Password',
         ):
             self.assertContains(r, text)
+        self.assertRegex(r.content.decode(), r'id="change-password-modal"[^>]*class="[^"]*\bhidden\b')
 
     def test_user_can_change_password_and_stay_signed_in(self):
         new_pw = "NewArchivalPrint#2026"
@@ -1170,6 +1176,8 @@ class ProfilePasswordChangeTests(Base):
         self.assertNotContains(r, "WrongOldPassword!")
         self.assertNotContains(r, secret)
         self.assertNotContains(r, "Different-Print-99")
+        # Modal stays open automatically so the user sees inline validation errors
+        self.assertNotRegex(r.content.decode(), r'id="change-password-modal"[^>]*class="[^"]*\bhidden\b')
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password(PW))
 
