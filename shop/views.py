@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, logout as auth_logout
+from django.contrib.auth import login, logout as auth_logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 import logging
 from urllib.parse import urlencode
 
@@ -339,15 +340,24 @@ def logout_view(request):
 @login_required
 def profile(request):
     prof, _ = Profile.objects.get_or_create(user=request.user)
+    pw_form = PasswordChangeForm(user=request.user)
     if request.method == "POST":
-        prof.phone = request.POST.get("phone", prof.phone)[:20]
-        prof.address = request.POST.get("address", prof.address)
-        prof.city = request.POST.get("city", prof.city)[:60]
-        prof.state = request.POST.get("state", prof.state)[:60]
-        prof.pincode = request.POST.get("pincode", prof.pincode)[:10]
-        prof.save()
-        messages.success(request, "Profile updated.")
-        return redirect("profile")
+        if request.POST.get("action") == "change_password":
+            pw_form = PasswordChangeForm(user=request.user, data=request.POST)
+            if pw_form.is_valid():
+                user = pw_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Password updated.")
+                return redirect("profile")
+        else:
+            prof.phone = request.POST.get("phone", prof.phone)[:20]
+            prof.address = request.POST.get("address", prof.address)
+            prof.city = request.POST.get("city", prof.city)[:60]
+            prof.state = request.POST.get("state", prof.state)[:60]
+            prof.pincode = request.POST.get("pincode", prof.pincode)[:10]
+            prof.save()
+            messages.success(request, "Profile updated.")
+            return redirect("profile")
     orders = request.user.orders.prefetch_related("items__poster").order_by("-created")
     all_orders = list(orders)
     stats = {
@@ -359,6 +369,7 @@ def profile(request):
     coupons = [c for c in Coupon.objects.order_by("-value") if c.is_available()]
     return render(request, "profile.html", {
         "prof": prof,
+        "pw_form": pw_form,
         "stats": stats,
         "coupons": coupons,
         "recent_orders": all_orders[:5],

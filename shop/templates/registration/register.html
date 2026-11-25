@@ -2,65 +2,138 @@
 {% block title %}Create Account — PosterHub{% endblock %}
 
 {% block content %}
-<div class="min-h-[80vh] flex items-center justify-center px-4 py-16">
-  <div class="w-full max-w-md">
+<div class="min-h-[75vh] flex items-center justify-center px-4 py-8 sm:py-12">
+  <div class="w-full max-w-[420px]">
 
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-galleryWhite border border-stoneLine shadow-sm mb-4">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="text-[11px] font-semibold uppercase tracking-widest text-stone-500">Join the Collective</span>
-      </div>
-      <h1 class="font-display font-extrabold text-3xl text-noir tracking-tight mb-2">Create account</h1>
-      <p class="text-stone-500 text-sm">Join PosterHub and start collecting</p>
+    <div class="text-center mb-6">
+      <h1 class="font-display font-extrabold text-2xl sm:text-3xl text-noir tracking-tight">Create account</h1>
+      <p class="text-stone-500 text-sm mt-1">Join PosterHub and start collecting</p>
     </div>
 
-    <!-- Card -->
-    <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-elevated p-8">
-      <form method="post" id="register-form">
-        {% csrf_token %}
-        {% for field in form %}
-        <div class="mb-5">
-          <label for="{{ field.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-2">
-            {{ field.label }}
-          </label>
-          <input
-            id="{{ field.id_for_label }}"
-            name="{{ field.html_name }}"
-            type="{{ field.field.widget.input_type }}"
-            {% if field.value %}value="{{ field.value }}"{% endif %}
-            autocomplete="{{ field.html_name }}"
-            class="w-full px-4 py-3 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all"
-            placeholder="{{ field.label }}"
-          >
-          {% if field.errors %}
-          <p class="mt-1.5 text-red-600 text-xs font-medium">{{ field.errors|join:', ' }}</p>
-          {% endif %}
-          {% if field.help_text %}
-          <p class="mt-1 text-stone-400 text-[11px]">{{ field.help_text }}</p>
-          {% endif %}
-        </div>
-        {% endfor %}
+    <div class="bg-galleryWhite border border-stoneLine rounded-xl gallery-shadow-elevated p-6 sm:p-8">
+      {% if form.non_field_errors %}
+      <div class="mb-4 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded text-red-700 text-xs font-medium" role="alert">
+        <i class="fa-solid fa-circle-exclamation mr-1.5"></i>{{ form.non_field_errors|join:' ' }}
+      </div>
+      {% endif %}
 
-        {% if form.non_field_errors %}
-        <div class="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-          <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ form.non_field_errors|join:' ' }}
+      <form method="post" id="register-form" class="space-y-4">
+        {% csrf_token %}
+
+        <div>
+          <label for="{{ form.username.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-1.5">Username</label>
+          <input id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" type="text"
+            value="{{ form.username.value|default:'' }}"
+            required autofocus maxlength="150" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+            placeholder="Choose a username"
+            {% if form.username.errors %}aria-invalid="true" aria-describedby="username-error"{% endif %}
+            class="w-full px-3.5 py-2.5 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all">
+          {% for e in form.username.errors %}<p id="username-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
         </div>
-        {% endif %}
+
+        <div>
+          <label for="{{ form.email.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-1.5">Email</label>
+          <input id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}" type="email"
+            value="{{ form.email.value|default:'' }}"
+            required autocomplete="email"
+            placeholder="you@example.com"
+            {% if form.email.errors %}aria-invalid="true" aria-describedby="email-error"{% endif %}
+            class="w-full px-3.5 py-2.5 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all">
+          {% for e in form.email.errors %}<p id="email-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ form.password1.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-1.5">Password</label>
+          <div class="relative">
+            <input id="{{ form.password1.id_for_label }}" name="{{ form.password1.html_name }}" type="password"
+              required autocomplete="new-password" placeholder="At least 8 characters"
+              {% if form.password1.errors %}aria-invalid="true" aria-describedby="password1-error"{% endif %}
+              class="w-full pl-3.5 pr-20 py-2.5 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all">
+            <button type="button" id="toggle-password1" data-password-toggle="{{ form.password1.id_for_label }}"
+              aria-controls="{{ form.password1.id_for_label }}" aria-pressed="false" aria-label="Show password"
+              class="absolute inset-y-0 right-0 px-3.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:text-noir rounded-r focus:outline-none focus-visible:ring-2 focus-visible:ring-noir transition-colors">
+              <i class="fa-regular fa-eye" data-eye-icon></i><span data-eye-text>Show</span>
+            </button>
+          </div>
+          {% for e in form.password1.errors %}<p id="password1-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ form.password2.id_for_label }}" class="block text-[11px] font-mono font-bold uppercase tracking-widest text-stone-500 mb-1.5">Confirm password</label>
+          <div class="relative">
+            <input id="{{ form.password2.id_for_label }}" name="{{ form.password2.html_name }}" type="password"
+              required autocomplete="new-password" placeholder="Re-enter password"
+              {% if form.password2.errors %}aria-invalid="true" aria-describedby="password2-error"{% endif %}
+              class="w-full pl-3.5 pr-20 py-2.5 bg-plaster border border-stoneLine rounded text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-noir focus:border-noir focus:bg-galleryWhite transition-all">
+            <button type="button" id="toggle-password2" data-password-toggle="{{ form.password2.id_for_label }}"
+              aria-controls="{{ form.password2.id_for_label }}" aria-pressed="false" aria-label="Show password confirmation"
+              class="absolute inset-y-0 right-0 px-3.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500 hover:text-noir rounded-r focus:outline-none focus-visible:ring-2 focus-visible:ring-noir transition-colors">
+              <i class="fa-regular fa-eye" data-eye-icon></i><span data-eye-text>Show</span>
+            </button>
+          </div>
+          {% for e in form.password2.errors %}<p id="password2-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
 
         <button id="create-account-btn" type="submit"
-          class="w-full py-3.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 transition-all shadow-md mt-2 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-user-plus"></i> Create Account
+          class="w-full py-3 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md !mt-5 flex items-center justify-center gap-2">
+          <span id="register-label">Create account</span><i class="fa-solid fa-arrow-right text-[10px]"></i>
         </button>
       </form>
     </div>
 
-    <!-- Footer link -->
-    <p class="text-center text-stone-500 text-sm mt-6">
+    <p class="text-center text-stone-500 text-sm mt-5">
       Already have an account?
-      <a href="{% url 'login' %}" class="text-noir font-bold hover:underline underline-offset-4 transition-all ml-1">Sign in →</a>
+      <a href="{% url 'login' %}" class="text-noir font-bold hover:underline underline-offset-4 transition-all ml-1">Sign in <span aria-hidden="true">&rarr;</span></a>
     </p>
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var form = document.getElementById('register-form');
+  var submit = document.getElementById('create-account-btn');
+  var label = document.getElementById('register-label');
+  var toggles = document.querySelectorAll('[data-password-toggle]');
+  if (!form || !toggles.length) return;
+
+  function setVisible(toggle, show) {
+    var input = document.getElementById(toggle.getAttribute('data-password-toggle'));
+    if (!input) return;
+    var icon = toggle.querySelector('[data-eye-icon]');
+    var text = toggle.querySelector('[data-eye-text]');
+    var baseLabel = toggle.id === 'toggle-password2' ? 'password confirmation' : 'password';
+    input.type = show ? 'text' : 'password';
+    toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+    toggle.setAttribute('aria-label', (show ? 'Hide ' : 'Show ') + baseLabel);
+    if (text) text.textContent = show ? 'Hide' : 'Show';
+    if (icon) icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+
+  toggles.forEach(function (toggle) {
+    toggle.addEventListener('click', function () {
+      var input = document.getElementById(toggle.getAttribute('data-password-toggle'));
+      if (!input) return;
+      var start = input.selectionStart, end = input.selectionEnd;
+      setVisible(toggle, input.type === 'password');
+      input.focus();
+      try { input.setSelectionRange(start, end); } catch (e) {}
+    });
+  });
+
+  form.addEventListener('submit', function () {
+    toggles.forEach(function (t) { setVisible(t, false); });
+    if (submit) submit.disabled = true;
+    if (label) label.textContent = 'Creating account…';
+  });
+
+  window.addEventListener('pageshow', function () {
+    toggles.forEach(function (t) { setVisible(t, false); });
+    if (submit) submit.disabled = false;
+    if (label) label.textContent = 'Create account';
+  });
+})();
+</script>
 {% endblock %}

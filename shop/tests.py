@@ -1073,3 +1073,117 @@ class LoginPageTests(Base):
         r = self.client.post(self.URL, {"username": "buyer", "password": PW})
         self.assertContains(r, "Please enter a correct username and password")   # Django treats it as a failed login
 
+
+class RegisterPageTests(Base):
+    URL = reverse("register")
+
+    def test_minimal_page_has_password_visibility_toggles_without_verbose_help_text(self):
+        r = self.client.get(self.URL)
+        self.assertEqual(r.status_code, 200)
+        for text in (
+            'id="register-form"',
+            'id="toggle-password1"',
+            'aria-controls="id_password1"',
+            'aria-label="Show password"',
+            'id="toggle-password2"',
+            'aria-controls="id_password2"',
+            'aria-label="Show password confirmation"',
+            'aria-pressed="false"',
+            'type="password"',
+            reverse("login"),
+        ):
+            self.assertContains(r, text)
+        for clutter in (
+            "Join the Collective",
+            "150 characters or fewer",
+            "Used for your order confirmations.",
+            "too similar to your other personal information",
+            "Enter the same password as before, for verification.",
+        ):
+            self.assertNotContains(r, clutter)
+
+    def test_failed_registration_keeps_username_and_email_but_never_prints_passwords(self):
+        secret = "Mismatch-Secret-99"
+        r = self.client.post(self.URL, {
+            "username": "newcollector",
+            "email": "collector@example.com",
+            "password1": secret,
+            "password2": "Different-Secret-11",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'value="newcollector"')
+        self.assertContains(r, 'value="collector@example.com"')
+        self.assertNotContains(r, secret)
+        self.assertNotContains(r, "Different-Secret-11")
+
+
+class ProfilePasswordChangeTests(Base):
+    URL = reverse("profile")
+
+    def setUp(self):
+        super().setUp()
+        self.client.login(username="buyer", password=PW)
+
+    def test_profile_page_renders_change_password_form_with_visibility_toggles(self):
+        r = self.client.get(self.URL)
+        self.assertEqual(r.status_code, 200)
+        for text in (
+            'id="password-change-form"',
+            'name="action" value="change_password"',
+            'id="toggle-old-password"',
+            'aria-controls="id_old_password"',
+            'id="toggle-new-password1"',
+            'aria-controls="id_new_password1"',
+            'id="toggle-new-password2"',
+            'aria-controls="id_new_password2"',
+            'Update Password',
+        ):
+            self.assertContains(r, text)
+
+    def test_user_can_change_password_and_stay_signed_in(self):
+        new_pw = "NewArchivalPrint#2026"
+        r = self.client.post(self.URL, {
+            "action": "change_password",
+            "old_password": PW,
+            "new_password1": new_pw,
+            "new_password2": new_pw,
+        }, follow=True)
+        self.assertRedirects(r, self.URL)
+        self.assertContains(r, "Password updated.")
+        # Session remains authenticated after password hash update
+        self.assertTrue(r.wsgi_request.user.is_authenticated)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(new_pw))
+
+    def test_wrong_current_password_or_mismatch_shows_errors_without_leaking_passwords(self):
+        secret = "FreshPrint-Secret-88"
+        r = self.client.post(self.URL, {
+            "action": "change_password",
+            "old_password": "WrongOldPassword!",
+            "new_password1": secret,
+            "new_password2": "Different-Print-99",
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.context["pw_form"].errors)
+        self.assertIn("old_password", r.context["pw_form"].errors)
+        self.assertIn("new_password2", r.context["pw_form"].errors)
+        self.assertNotContains(r, "WrongOldPassword!")
+        self.assertNotContains(r, secret)
+        self.assertNotContains(r, "Different-Print-99")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(PW))
+
+    def test_address_update_still_works_independently(self):
+        r = self.client.post(self.URL, {
+            "action": "profile",
+            "address": "42 Gallery Lane",
+            "city": "Bengaluru",
+            "state": "Karnataka",
+            "pincode": "560001",
+            "phone": "+91 98765 43210",
+        }, follow=True)
+        self.assertRedirects(r, self.URL)
+        self.assertContains(r, "Profile updated.")
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.city, "Bengaluru")
+

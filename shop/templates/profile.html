@@ -53,6 +53,7 @@
       </div>
       <form method="post" class="px-6 py-5">
         {% csrf_token %}
+        <input type="hidden" name="action" value="profile">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="sm:col-span-2">
             <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">Address</label>
@@ -120,6 +121,76 @@
     </div>
   </div>
 
+  <!-- Change password -->
+  <div id="change-password-section" class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat overflow-hidden mb-10">
+    <div class="px-6 py-4 border-b border-stoneLine bg-plaster/50 flex items-center justify-between">
+      <h2 class="font-display font-extrabold text-base text-noir"><i class="fa-solid fa-lock text-champagne mr-2"></i>Change Password</h2>
+      <span class="text-[10px] font-mono text-stone-400">Minimum 8 characters</span>
+    </div>
+    <form method="post" id="password-change-form" class="px-6 py-5">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="change_password">
+      {% if pw_form.non_field_errors %}
+      <div class="mb-4 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded text-red-700 text-xs font-medium" role="alert">
+        <i class="fa-solid fa-circle-exclamation mr-1.5"></i>{{ pw_form.non_field_errors|join:' ' }}
+      </div>
+      {% endif %}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label for="{{ pw_form.old_password.id_for_label }}" class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">Current password</label>
+          <div class="relative">
+            <input id="{{ pw_form.old_password.id_for_label }}" name="{{ pw_form.old_password.html_name }}" type="password"
+              required autocomplete="current-password" placeholder="Current password"
+              {% if pw_form.old_password.errors %}aria-invalid="true" aria-describedby="old-password-error"{% endif %}
+              class="w-full pl-3 pr-16 py-2 bg-plaster/70 border border-stoneLine rounded-sm text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-noir focus:bg-galleryWhite transition-all"/>
+            <button type="button" id="toggle-old-password" data-password-toggle="{{ pw_form.old_password.id_for_label }}" data-label-subject="current password"
+              aria-controls="{{ pw_form.old_password.id_for_label }}" aria-pressed="false" aria-label="Show current password"
+              class="absolute inset-y-0 right-0 px-3 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-noir transition-colors">
+              <i class="fa-regular fa-eye" data-eye-icon></i><span data-eye-text>Show</span>
+            </button>
+          </div>
+          {% for e in pw_form.old_password.errors %}<p id="old-password-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ pw_form.new_password1.id_for_label }}" class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">New password</label>
+          <div class="relative">
+            <input id="{{ pw_form.new_password1.id_for_label }}" name="{{ pw_form.new_password1.html_name }}" type="password"
+              required autocomplete="new-password" placeholder="New password"
+              {% if pw_form.new_password1.errors %}aria-invalid="true" aria-describedby="new-password1-error"{% endif %}
+              class="w-full pl-3 pr-16 py-2 bg-plaster/70 border border-stoneLine rounded-sm text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-noir focus:bg-galleryWhite transition-all"/>
+            <button type="button" id="toggle-new-password1" data-password-toggle="{{ pw_form.new_password1.id_for_label }}" data-label-subject="new password"
+              aria-controls="{{ pw_form.new_password1.id_for_label }}" aria-pressed="false" aria-label="Show new password"
+              class="absolute inset-y-0 right-0 px-3 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-noir transition-colors">
+              <i class="fa-regular fa-eye" data-eye-icon></i><span data-eye-text>Show</span>
+            </button>
+          </div>
+          {% for e in pw_form.new_password1.errors %}<p id="new-password1-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
+
+        <div>
+          <label for="{{ pw_form.new_password2.id_for_label }}" class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">Confirm new password</label>
+          <div class="relative">
+            <input id="{{ pw_form.new_password2.id_for_label }}" name="{{ pw_form.new_password2.html_name }}" type="password"
+              required autocomplete="new-password" placeholder="Confirm new password"
+              {% if pw_form.new_password2.errors %}aria-invalid="true" aria-describedby="new-password2-error"{% endif %}
+              class="w-full pl-3 pr-16 py-2 bg-plaster/70 border border-stoneLine rounded-sm text-sm text-noir placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-noir focus:bg-galleryWhite transition-all"/>
+            <button type="button" id="toggle-new-password2" data-password-toggle="{{ pw_form.new_password2.id_for_label }}" data-label-subject="confirm new password"
+              aria-controls="{{ pw_form.new_password2.id_for_label }}" aria-pressed="false" aria-label="Show confirm new password"
+              class="absolute inset-y-0 right-0 px-3 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-noir transition-colors">
+              <i class="fa-regular fa-eye" data-eye-icon></i><span data-eye-text>Show</span>
+            </button>
+          </div>
+          {% for e in pw_form.new_password2.errors %}<p id="new-password2-error" class="mt-1 text-red-600 text-xs font-medium">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+      <button id="change-password-btn" type="submit"
+        class="mt-5 px-6 py-2.5 bg-noir text-alabaster text-xs font-bold uppercase tracking-widest rounded-full hover:bg-obsidian disabled:opacity-60 disabled:cursor-not-allowed transition-all">
+        <i class="fa-solid fa-key mr-2"></i><span id="change-password-label">Update Password</span>
+      </button>
+    </form>
+  </div>
+
   <!-- Recent orders -->
   <div class="bg-galleryWhite border border-stoneLine rounded-lg gallery-shadow-flat overflow-hidden">
     <div class="px-6 py-4 border-b border-stoneLine bg-plaster/50 flex items-center justify-between">
@@ -166,5 +237,52 @@ function copyCode(btn, code) {
     setTimeout(() => { btn.innerHTML = old; }, 1500);
   });
 }
+
+(function () {
+  var form = document.getElementById('password-change-form');
+  var submit = document.getElementById('change-password-btn');
+  var label = document.getElementById('change-password-label');
+  var toggles = document.querySelectorAll('[data-password-toggle]');
+  if (!form || !toggles.length) return;
+
+  function setVisible(toggle, show) {
+    var input = document.getElementById(toggle.getAttribute('data-password-toggle'));
+    if (!input) return;
+    var icon = toggle.querySelector('[data-eye-icon]');
+    var text = toggle.querySelector('[data-eye-text]');
+    var subject = toggle.getAttribute('data-label-subject') || 'password';
+    input.type = show ? 'text' : 'password';
+    toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+    toggle.setAttribute('aria-label', (show ? 'Hide ' : 'Show ') + subject);
+    if (text) text.textContent = show ? 'Hide' : 'Show';
+    if (icon) icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+
+  toggles.forEach(function (toggle) {
+    toggle.addEventListener('click', function () {
+      var input = document.getElementById(toggle.getAttribute('data-password-toggle'));
+      if (!input) return;
+      var start = input.selectionStart, end = input.selectionEnd;
+      setVisible(toggle, input.type === 'password');
+      input.focus();
+      try { input.setSelectionRange(start, end); } catch (e) {}
+    });
+  });
+
+  form.addEventListener('submit', function () {
+    toggles.forEach(function (t) { setVisible(t, false); });
+    if (submit) submit.disabled = true;
+    if (label) label.textContent = 'Updating…';
+  });
+
+  window.addEventListener('pageshow', function () {
+    toggles.forEach(function (t) { setVisible(t, false); });
+    if (submit) submit.disabled = false;
+    if (label) label.textContent = 'Update Password';
+  });
+  {% if pw_form.errors %}
+  document.getElementById('change-password-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  {% endif %}
+})();
 </script>
 {% endblock %}
